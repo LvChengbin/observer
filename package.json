@@ -1,0 +1,54 @@
+{
+  "name": "@lvchengbin/observer",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [
+    "observer",
+    "getter",
+    "setter",
+    "object",
+    "data"
+  ],
+  "main": "dist/observer.cjs.js",
+  "jsnext:main": "src/observer.js",
+  "scripts": {
+    "build": "rollup -c",
+    "prepublish": "npm run build",
+    "test": "karma start",
+    "lint": "eslint ./ --cache --ignore-path .eslintignore",
+    "precommit-msg": "echo 'Pre-commit checks...' && exit 0"
+  },
+  "pre-commit": [
+    "precommit-msg",
+    "lint"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:LvChengbin/observer.git"
+  },
+  "author": "LvChengbin",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/cli": "^7.0.0-beta.39",
+    "@babel/core": "^7.0.0-beta.39",
+    "@babel/preset-env": "^7.0.0-beta.39",
+    "eslint": "^4.15.0",
+    "jasmine-core": "^2.8.0",
+    "karma": "^2.0.0",
+    "karma-chrome-launcher": "^2.2.0",
+    "karma-jasmine": "^1.1.1",
+    "karma-rollup-preprocessor": "^5.1.1",
+    "optimist": "^0.6.1",
+    "pre-commit": "^1.2.2",
+    "puppeteer": "^1.0.0",
+    "rollup": "^0.54.0",
+    "rollup-plugin-babel": "^4.0.0-beta.1",
+    "rollup-plugin-commonjs": "^8.3.0",
+    "rollup-plugin-node-resolve": "^3.0.2"
+  },
+  "dependencies": {
+    "@babel/polyfill": "^7.0.0-beta.39",
+    "@lvchengbin/event-emitter": "0.0.9",
+    "@lvchengbin/is": "0.0.9"
+  }
+}
