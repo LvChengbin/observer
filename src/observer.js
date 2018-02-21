@@ -206,7 +206,7 @@ function traverse( obj, base, dest ) {
             const item = obj[ i ];
             subs.push( id );
             if( typeof item === 'object' ) {
-                traverse( obj[i], base + '[' + id + ']' );
+                traverse( item, base + '[' + id + ']' );
             }
         }
     }

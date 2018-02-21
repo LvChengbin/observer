@@ -39,6 +39,15 @@ function findInSetters( list, observer, path ) {
     return false;
 }
 
+function findInObjects( list, observer, path ) {
+    for( const item of list ) {
+        if( item.observer === observer && item.path === path ) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function addSetter( setter, observer, path ) {
     const list = setters.get( setter ) || [];
 
@@ -54,6 +63,9 @@ function addObject( obj, observer, path ) {
     let list = objects.get( obj );
 
     if( list ) {
+        if( findInObjects( list, observer, path ) ) {
+            return list;
+        }
         list.push( { observer, path } );
     } else {
         list = [ { observer, path } ];
@@ -64,4 +76,25 @@ function addObject( obj, observer, path ) {
     return list;
 }
 
-export { addSetter, addObject };
+/**
+ * @function deleteFromSetters
+ * To delete items in the {observer, path} object list of a setter from setters map
+ */
+function deleteFromSetters( observer, path ) {
+    for( let key of setters.keys() ) {
+        const item = setters.get( key );
+        /**
+         * while deleting an item of a setter, all the paths start with the specified path should be deleted at the same time.
+         * eg. while deleting "a.b", and then "a.b.c", "a.b.d", "a.b.c.d" would be useless in the same observer.
+         * The relevant paths including:
+         * a.b
+         * a.b.*
+         * a.b[n]
+         */
+        if( item.observer === observer && ( item.path === path || !item.path.indexOf( path + '.' ) || !item.path.indexOf( path + '[' ) ) ) {
+            setters.delete( key );
+        }
+    }
+}
+
+export { addSetter, addObject, objects, setters, deleteFromSetters };

@@ -1,3 +1,7 @@
+import isInteger from '@lvchengbin/is/src/integer';
+import utils from './utils';
+import { addObject, addSetter, objects, deleteFromSetters } from './maps';
+
 /** 
  * @file to convert an object to an observer instance.
  *
@@ -11,7 +15,7 @@
  *
  *      - should not add the {observer, path} object into setters map again.
  *      
- * 3. To translate one object in a same observer multiple times
+ * 3. To translate one object in one observer multiple times
  *      const obj = {};
  *      new Observer( {
  *          x : obj,
@@ -40,11 +44,11 @@
  *
  *      - should get all observers which are using current object, and set the value to all the observer.
  *      - if the old value is a non-empty object, remove the old value and then set the new value
+ *
+ * 7. To use an observer as apart of another observer.
+ *      const observer = new Observer( { x : 1 } ); 
+ *      new Observer( { observer } );
  */
-
-import isInteger from '@lvchengbin/is/src/integer';
-import utils from './utils';
-import { addObject, addSetter } from './maps';
 
 const getKeys = Object.keys;
 const isArray = Array.isArray;
@@ -56,7 +60,7 @@ const defineProperty = Object.defineProperty;
  * @function translate
  * To translate an property of an object to GETTER and SETTER.
  */
-function translate( obj, key, val, path, dest, observer ) {
+function translate( obj, key, val, path, observer ) {
     const descriptor = getOwnPropertyDescriptor( obj, key );
     if( descriptor && !descriptor.configurable ) {
         return;
@@ -81,7 +85,7 @@ function translate( obj, key, val, path, dest, observer ) {
          */
         if( v === value ) return;
 
-        console.log( `[Observer setter]: ${path}` );
+        //console.log( `[Observer setter]: ${path}` );
         
         if( setter ) {
             setter.call( obj, v );
@@ -96,11 +100,11 @@ function translate( obj, key, val, path, dest, observer ) {
 
     const get = function OBSERVER_GETTER() {
         const v = getter ? getter.call( obj ) : val;
-        console.log( `[Observer getter]: ${path}` );
+        //console.log( `[Observer getter]: ${path}` );
         return v;
     };
 
-    defineProperty( dest, key, {
+    defineProperty( obj, key, {
         enumerable : true,
         configurable : true,
         set,
@@ -108,16 +112,23 @@ function translate( obj, key, val, path, dest, observer ) {
     } );
 }
 
-function traverse( obj, base, dest, observer ) {
+function traverse( obj, observer, base ) {
 
-    dest || ( dest = obj );
-
-    const list = addObject( dest, observer, base );
+    /**
+     * to add current object into the objects map
+     */
+    addObject( obj, observer, base );
 
     const isarr = isArray( obj );
 
     if( isarr ) {
-        console.log( obj );
+        for( let i = 0, l = obj.length; i < l; i += 1 ) {
+            const item = obj[ i ];
+
+            if( item && typeof item === 'object' ) {
+                traverse( item, observer, `${base}[${i}]` );
+            }
+        }
     }
 
     const keys = getKeys( obj );
@@ -131,52 +142,97 @@ function traverse( obj, base, dest, observer ) {
 
         const path = base ? base + '.' + key : key;
 
-        for( let item of list ) {
-            translate( obj, key, val, item.path ? item.path + '.' + key : key, dest );
-        }
+        translate( obj, key, val, path );
 
         if( val && typeof val === 'object' ) {
-            traverse( val, path, null, observer );
+            traverse( val, observer, path );
         }
     }
 }
 
-class Observer {
-    constructor( obj, base ) {
-        traverse( obj, base, this, this );
+/**
+ * @function remove
+ * To remove all data, storing in setters map and objects map, of the specified property of an object.
+ */
+function remove( obj, key ) {
+    const data = obj.key;
+
+    /**
+     * getting all {observer, path} object from objects map, so that it is able to get the path of the property which is going to be deleted, and then, to delete data storing in setters map.
+     */
+    const list = objects.get( obj );
+
+    for( let item of list ) {
+        deleteFromSetters( item.observer, item.path + '.' + key );
     }
 }
 
-Observer.set = ( obj, key, value, observer ) => {
-    if( Observer.translated( obj, key ) ) {
-        return obj.key = value;
+const Observer = {
+    create( obj, proto ) {
+        if( !obj.__observer ) {
+            defineProperty( obj, '__observer', {
+                enumerable : false,
+                configurable : false,
+                value : true
+            } );
+        }
+        traverse( obj, obj );
+        if( proto ) {
+            Object.setPrototypeOf( obj, proto );
+        }
+        return obj;
+    },
+
+    set( obj, key, value ) {
+
+        if( Observer.translated( obj, key ) ) {
+            return obj.key = value;
+        }
+
+        const list = objects.get( obj );
+
+        if( !list ) {
+            throw new TypeError( 'The object has not been translated by observer.' );
+        }
+
+        for( let item of list ) {
+            translate( obj, key, value, item.path, item.observer );
+        }
+    },
+
+    /**
+     * @function delete
+     * To delete an property from
+     *
+     * - delete all relevant data, storing in each map, for both the specified property and its sub/descandant object.
+     * -
+     */
+    delete( obj, key ) {
+        remove( obj, key );
+        delete obj[ key ];
+    },
+
+    /**
+     * @function translated 
+     * to check if the property in the object has been translated to observer setter and getter
+     *
+     * @param {Object|Array} obj
+     * @param {String|Integer} key The property name
+     *
+     */
+    translated( obj, key ) {
+        const descriptor = Object.getOwnPropertyDescriptor( obj, key );
+        if( descriptor && !descriptor.configurable ) {
+            return false;
+        }
+        const setter = descriptor && descriptor.set;
+        return !!( setter && utils.isObserverSetter( setter ) );
+    },
+
+    is( observer ) {
+        return observer instanceof Observer;
     }
-    traverse( { [ key ] : value }, null, obj, observer );
 };
 
-/**
- * @function translated 
- * to check if the property in the object has been translated to observer setter and getter
- *
- * @param {Object|Array} obj
- * @param {String|Integer} key The property name
- *
- */
-Observer.translated = ( obj, key ) => {
-    const descriptor = Object.getOwnPropertyDescriptor( obj, key );
-    if( descriptor && !descriptor.configurable ) {
-        return false;
-    }
-    const setter = descriptor && descriptor.set;
-    return !!( setter && utils.isObserverSetter( setter ) );
-};
-
-Observer.is = observer => {
-    return observer instanceof Observer;
-};
-
-Observer.isArray = ( observer ) => {
-    return observer.__isarray;
-};
 
 export default Observer;

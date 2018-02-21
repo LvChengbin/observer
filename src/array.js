@@ -18,6 +18,3 @@ const methods = Object.create( Array.prototype );
 
 [ 'push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse', 'fill' ].forEach( method => {
 } );
-
-
-

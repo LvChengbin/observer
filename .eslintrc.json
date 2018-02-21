@@ -9,6 +9,12 @@
         "describe" : true,
         "it" : true,
         "expect" : true,
+        "beforeEach" : true,
+        "beforeAll" : true,
+        "afterEach" : true,
+        "afterAll" : true,
+        "xdescribe" : true,
+        "xit" : true,
         "J" : true,
         "Jaunty" : true
     },
