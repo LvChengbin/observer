@@ -1,6 +1,6 @@
 import isInteger from '@lvchengbin/is/src/integer';
 import utils from './utils';
-import { addObject, addSetter, objects, deleteFromSetters } from './maps';
+import { addObject, addSetter, objects, deleteFromSetters, deleteFromObjects } from './maps';
 
 /** 
  * @file to convert an object to an observer instance.
@@ -59,9 +59,19 @@ const defineProperty = Object.defineProperty;
 /**
  * @function translate
  * To translate an property of an object to GETTER and SETTER.
+ *
+ * @param {Object} obj The object which will be translated
+ * @param {String} key The name of the property
+ * @param {*} val The value of the property
+ * @param {String} path The path in the observer of the property
+ * @param {Observer} observer
  */
 function translate( obj, key, val, path, observer ) {
     const descriptor = getOwnPropertyDescriptor( obj, key );
+    /**
+     * if the configurable of the property is false,
+     * the property cannot be translated
+     */
     if( descriptor && !descriptor.configurable ) {
         return;
     }
@@ -98,6 +108,11 @@ function translate( obj, key, val, path, observer ) {
         }
     };
 
+    /**
+     * add the setter into the setters map
+     */
+    addSetter( set, observer, path );
+
     const get = function OBSERVER_GETTER() {
         const v = getter ? getter.call( obj ) : val;
         //console.log( `[Observer getter]: ${path}` );
@@ -105,13 +120,21 @@ function translate( obj, key, val, path, observer ) {
     };
 
     defineProperty( obj, key, {
-        enumerable : true,
+        enumerable : descriptor ? descriptor.enumerable : true,
         configurable : true,
         set,
         get
     } );
 }
 
+/**
+ * @function traverse
+ * To traverse and translate an object.
+ *
+ * @param {Object} obj
+ * @param {Observer} observer
+ * @param {String} base
+ */
 function traverse( obj, observer, base ) {
 
     /**
@@ -135,35 +158,16 @@ function traverse( obj, observer, base ) {
 
     for( let key of keys ) {
         const val = obj[ key ];
-        // to skip the indexes of array
-        if( isarr && isInteger( key ) && key >= 0 && key < obj.length ) {
-            continue;
-        }
+        // to skip translating the indexes of array
+        if( isarr && isInteger( key ) && key >= 0 && key < obj.length ) continue;
 
         const path = base ? base + '.' + key : key;
 
-        translate( obj, key, val, path );
+        translate( obj, key, val, path, observer );
 
         if( val && typeof val === 'object' ) {
             traverse( val, observer, path );
         }
-    }
-}
-
-/**
- * @function remove
- * To remove all data, storing in setters map and objects map, of the specified property of an object.
- */
-function remove( obj, key ) {
-    const data = obj.key;
-
-    /**
-     * getting all {observer, path} object from objects map, so that it is able to get the path of the property which is going to be deleted, and then, to delete data storing in setters map.
-     */
-    const list = objects.get( obj );
-
-    for( let item of list ) {
-        deleteFromSetters( item.observer, item.path + '.' + key );
     }
 }
 
@@ -186,7 +190,7 @@ const Observer = {
     set( obj, key, value ) {
 
         if( Observer.translated( obj, key ) ) {
-            return obj.key = value;
+            return obj[ key ] = value;
         }
 
         const list = objects.get( obj );
@@ -208,7 +212,31 @@ const Observer = {
      * -
      */
     delete( obj, key ) {
-        remove( obj, key );
+        /**
+         * getting all {observer, path} object from objects map,
+         * so that it is able to get the path of the property which is going to be deleted,
+         * and then, to delete data storing in setters map.
+         */
+        const list = objects.get( obj );
+
+        /**
+         * To remove all data stored in setters map
+         */
+        for( let item of list ) {
+            deleteFromSetters( item.observer, item.path ? item.path + '.' + key : key );
+        }
+
+        /**
+         * if the value of the property is an object, delete all data being stored in objects map.
+         * this process have to be executed after removing all data in the setters map,
+         * otherwise, the data in setters map cannot be deleted clearly,
+         * because some paths will be removed in this step before using them.
+         */
+        if( obj[ key ] && typeof obj[ key ] === 'object' ) {
+            for( let item of list ) {
+                deleteFromObjects( item.observer, item.path ? item.path + '.' + key : key );
+            }
+        }
         delete obj[ key ];
     },
 

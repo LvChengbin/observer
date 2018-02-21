@@ -51,6 +51,8 @@ function findInObjects( list, observer, path ) {
 function addSetter( setter, observer, path ) {
     const list = setters.get( setter ) || [];
 
+    path || ( path = '' );
+
     if( !findInSetters( list, observer, path ) ) {
         list.push( { observer, path } );
     }
@@ -61,6 +63,8 @@ function addSetter( setter, observer, path ) {
 
 function addObject( obj, observer, path ) {
     let list = objects.get( obj );
+
+    path || ( path = '' );
 
     if( list ) {
         if( findInObjects( list, observer, path ) ) {
@@ -82,7 +86,7 @@ function addObject( obj, observer, path ) {
  */
 function deleteFromSetters( observer, path ) {
     for( let key of setters.keys() ) {
-        const item = setters.get( key );
+        const list = setters.get( key );
         /**
          * while deleting an item of a setter, all the paths start with the specified path should be deleted at the same time.
          * eg. while deleting "a.b", and then "a.b.c", "a.b.d", "a.b.c.d" would be useless in the same observer.
@@ -91,10 +95,37 @@ function deleteFromSetters( observer, path ) {
          * a.b.*
          * a.b[n]
          */
-        if( item.observer === observer && ( item.path === path || !item.path.indexOf( path + '.' ) || !item.path.indexOf( path + '[' ) ) ) {
-            setters.delete( key );
+        for( let i = 0; i < list.length; i += 1 ) {
+            const item = list[ i ];
+            const p = item.path;
+
+            if( item.observer === observer && ( p === path || !p.indexOf( path + '.' ) || !p.indexOf( path + '[' ) ) ) {
+                list.splice( i--, 1 );
+            }
         }
+        setters.set( key, list );
     }
 }
 
-export { addSetter, addObject, objects, setters, deleteFromSetters };
+/**
+ * @function deleteFromObjects
+ * To delete item in the {observer, path} object list of an object from objects map.
+ */
+function deleteFromObjects( observer, path ) {
+    for( let key of objects.keys() ) {
+        const list = objects.get( key );
+
+        for( let i = 0; i < list.length; i += 1 ) {
+            const item = list[ i ];
+            const p = item.path;
+
+            if( item.observer === observer && ( p === path || p.indexOf( path + '.' ) || p.indexOf( path + '[' ) ) ) {
+                list.splice( i--, 1 );
+            }
+        }
+
+        objects.set( key, list );
+    }
+}
+
+export { addSetter, addObject, objects, setters, deleteFromSetters, deleteFromObjects };
