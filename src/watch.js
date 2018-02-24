@@ -1,7 +1,6 @@
 import EventEmitter from '@lvchengbin/event-emitter';
 import isFunction from '@lvchengbin/is/src/function';
-import { eventcenter } from './global';
-import Collector from './collector';
+import { eventcenter, collector } from './global';
 
 
 const ec = new EventEmitter();
@@ -143,9 +142,9 @@ function watch( observer, exp, handler ) {
     if( isFunction( exp ) ) {
         fn = exp;
         cb = () => {
-            Collector.start();
+            collector.start();
             const value = fn( observer );
-            const setters = Collector.stop();
+            const setters = collector.stop();
             for( let setter of setters ) {
                 ec.on( setter, cb );
             }
@@ -173,9 +172,9 @@ function watch( observer, exp, handler ) {
         cb = () => {
             let value;
             if( continuous ) {
-                Collector.start();
+                collector.start();
                 value = fn( observer );
-                const setters = Collector.stop();
+                const setters = collector.stop();
                 for( let setter of setters ) {
                     ec.on( setter, cb );
                 }
@@ -190,9 +189,9 @@ function watch( observer, exp, handler ) {
         };
     }
 
-    Collector.start();
+    collector.start();
     const value = fn( observer );
-    setters = Collector.stop();
+    setters = collector.stop();
     setValue( observer, exp, value );
 
     /**
