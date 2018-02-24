@@ -444,67 +444,6 @@ $export.R = 128; // real proto method for `library`
 
 var _export = $export;
 
-var f$1 = {}.propertyIsEnumerable;
-var _objectPie = {
-  f: f$1
-};
-
-// eslint-disable-next-line no-prototype-builtins
-
-var _iobject = Object('z').propertyIsEnumerable(0) ? Object : function (it) {
-  return _cof(it) == 'String' ? it.split('') : Object(it);
-};
-
-var _toIobject = function _toIobject(it) {
-  return _iobject(_defined(it));
-};
-
-var gOPD = Object.getOwnPropertyDescriptor;
-var f$2 = _descriptors ? gOPD : function getOwnPropertyDescriptor(O, P) {
-  O = _toIobject(O);
-  P = _toPrimitive(P, true);
-  if (_ie8DomDefine) try {
-    return gOPD(O, P);
-  } catch (e) {
-    /* empty */
-  }
-  if (_has(O, P)) return _propertyDesc(!_objectPie.f.call(O, P), O[P]);
-};
-var _objectGopd = {
-  f: f$2
-};
-
-/* eslint-disable no-proto */
-
-var check = function check(O, proto) {
-  _anObject(O);
-  if (!_isObject(proto) && proto !== null) throw TypeError(proto + ": can't set as prototype!");
-};
-
-var _setProto = {
-  set: Object.setPrototypeOf || ('__proto__' in {} ? // eslint-disable-line
-  function (test, buggy, set) {
-    try {
-      set = _ctx(Function.call, _objectGopd.f(Object.prototype, '__proto__').set, 2);
-      set(test, []);
-      buggy = !(test instanceof Array);
-    } catch (e) {
-      buggy = true;
-    }
-
-    return function setPrototypeOf(O, proto) {
-      check(O, proto);
-      if (buggy) O.__proto__ = proto;else set(O, proto);
-      return O;
-    };
-  }({}, false) : undefined),
-  check: check
-};
-
-_export(_export.S, 'Object', {
-  setPrototypeOf: _setProto.set
-});
-
 var _meta = createCommonjsModule(function (module) {
   var META = _uid('meta');
   var setDesc = _objectDp.f;
@@ -589,9 +528,9 @@ var _setToStringTag = function _setToStringTag(it, tag, stat) {
   });
 };
 
-var f$3 = _wks;
+var f$1 = _wks;
 var _wksExt = {
-  f: f$3
+  f: f$1
 };
 
 var _library = false;
@@ -603,6 +542,16 @@ var _wksDefine = function _wksDefine(name) {
   if (name.charAt(0) != '_' && !(name in $Symbol)) defineProperty($Symbol, name, {
     value: _wksExt.f(name)
   });
+};
+
+// eslint-disable-next-line no-prototype-builtins
+
+var _iobject = Object('z').propertyIsEnumerable(0) ? Object : function (it) {
+  return _cof(it) == 'String' ? it.split('') : Object(it);
+};
+
+var _toIobject = function _toIobject(it) {
+  return _iobject(_defined(it));
 };
 
 // 7.1.4 ToInteger
@@ -686,9 +635,14 @@ var _objectKeys = Object.keys || function keys(O) {
   return _objectKeysInternal(O, _enumBugKeys);
 };
 
-var f$4 = Object.getOwnPropertySymbols;
+var f$2 = Object.getOwnPropertySymbols;
 var _objectGops = {
-  f: f$4
+  f: f$2
+};
+
+var f$3 = {}.propertyIsEnumerable;
+var _objectPie = {
+  f: f$3
 };
 
 var _enumKeys = function _enumKeys(it) {
@@ -781,12 +735,12 @@ var _objectCreate = Object.create || function create(O, Properties) {
 
 var hiddenKeys = _enumBugKeys.concat('length', 'prototype');
 
-var f$5 = Object.getOwnPropertyNames || function getOwnPropertyNames(O) {
+var f$4 = Object.getOwnPropertyNames || function getOwnPropertyNames(O) {
   return _objectKeysInternal(O, hiddenKeys);
 };
 
 var _objectGopn = {
-  f: f$5
+  f: f$4
 };
 
 var gOPN = _objectGopn.f;
@@ -801,11 +755,26 @@ var getWindowNames = function getWindowNames(it) {
   }
 };
 
-var f$6 = function getOwnPropertyNames(it) {
+var f$5 = function getOwnPropertyNames(it) {
   return windowNames && toString$1.call(it) == '[object Window]' ? getWindowNames(it) : gOPN(_toIobject(it));
 };
 
 var _objectGopnExt = {
+  f: f$5
+};
+
+var gOPD = Object.getOwnPropertyDescriptor;
+var f$6 = _descriptors ? gOPD : function getOwnPropertyDescriptor(O, P) {
+  O = _toIobject(O);
+  P = _toPrimitive(P, true);
+  if (_ie8DomDefine) try {
+    return gOPD(O, P);
+  } catch (e) {
+    /* empty */
+  }
+  if (_has(O, P)) return _propertyDesc(!_objectPie.f.call(O, P), O[P]);
+};
+var _objectGopd = {
   f: f$6
 };
 
@@ -1289,6 +1258,37 @@ for (var collections = _objectKeys(DOMIterables), i = 0; i < collections.length;
   }
 }
 
+/* eslint-disable no-proto */
+
+var check = function check(O, proto) {
+  _anObject(O);
+  if (!_isObject(proto) && proto !== null) throw TypeError(proto + ": can't set as prototype!");
+};
+
+var _setProto = {
+  set: Object.setPrototypeOf || ('__proto__' in {} ? // eslint-disable-line
+  function (test, buggy, set) {
+    try {
+      set = _ctx(Function.call, _objectGopd.f(Object.prototype, '__proto__').set, 2);
+      set(test, []);
+      buggy = !(test instanceof Array);
+    } catch (e) {
+      buggy = true;
+    }
+
+    return function setPrototypeOf(O, proto) {
+      check(O, proto);
+      if (buggy) O.__proto__ = proto;else set(O, proto);
+      return O;
+    };
+  }({}, false) : undefined),
+  check: check
+};
+
+_export(_export.S, 'Object', {
+  setPrototypeOf: _setProto.set
+});
+
 var isNumber = (function (n) {
   var strict = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
@@ -1760,6 +1760,19 @@ var _collection = function _collection(NAME, wrapper, methods, common, IS_MAP, I
   return C;
 };
 
+var SET = 'Set'; // 23.2 Set Objects
+
+var es6_set = _collection(SET, function (get) {
+  return function Set() {
+    return get(this, arguments.length > 0 ? arguments[0] : undefined);
+  };
+}, {
+  // 23.2.3.1 Set.prototype.add(value)
+  add: function add(value) {
+    return _collectionStrong.def(_validateCollection(this, SET), value = value === 0 ? 0 : value, value);
+  }
+}, _collectionStrong);
+
 var MAP = 'Map'; // 23.1 Map Objects
 
 var es6_map = _collection(MAP, function (get) {
@@ -1777,261 +1790,6 @@ var es6_map = _collection(MAP, function (get) {
     return _collectionStrong.def(_validateCollection(this, MAP), key === 0 ? 0 : key, value);
   }
 }, _collectionStrong, true);
-
-function isObserverSetter(func) {
-  return func.name === 'OBSERVER_SETTER' || /^function\s+OBSERVER_SETTER\(\)/.test(func.toString());
-}
-
-var cache = new Map();
-
-function expression(str) {
-  var func = cache.get(str);
-  if (func) return func;
-  func = new Function('s', 'try{with(s)return ' + str + '}catch(e){return null}');
-  cache.set(str, func);
-  return func;
-}
-
-var utils = {
-  isObserverSetter: isObserverSetter,
-  expression: expression
-};
-
-/**
- * a map for storing the relationships between setters, paths and observer instances.
- *
- * {
- *      [ setter ] : [ {
- *          observer,
- *          path
- *      } ]
- * }
- */
-var setters = new Map();
-/**
- * a map for storing the relationships between every object, observer instances and the path of the object in the observer instance.
- *
- * {
- *      [ object ] : [ 
- *          {
- *              observer,
- *              path
- *          },
- *          {
- *              observer,
- *              path
- *          }
- *      ]
- * }
- */
-
-var objects = new Map();
-
-function findInSetters(list, observer, path) {
-  var _iteratorNormalCompletion = true;
-  var _didIteratorError = false;
-  var _iteratorError = undefined;
-
-  try {
-    for (var _iterator = list[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-      var _item = _step.value;
-
-      if (_item.observer === observer && _item.path === path) {
-        return true;
-      }
-    }
-  } catch (err) {
-    _didIteratorError = true;
-    _iteratorError = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion && _iterator.return != null) {
-        _iterator.return();
-      }
-    } finally {
-      if (_didIteratorError) {
-        throw _iteratorError;
-      }
-    }
-  }
-
-  return false;
-}
-
-function findInObjects(list, observer, path) {
-  var _iteratorNormalCompletion2 = true;
-  var _didIteratorError2 = false;
-  var _iteratorError2 = undefined;
-
-  try {
-    for (var _iterator2 = list[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-      var _item2 = _step2.value;
-
-      if (_item2.observer === observer && _item2.path === path) {
-        return true;
-      }
-    }
-  } catch (err) {
-    _didIteratorError2 = true;
-    _iteratorError2 = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion2 && _iterator2.return != null) {
-        _iterator2.return();
-      }
-    } finally {
-      if (_didIteratorError2) {
-        throw _iteratorError2;
-      }
-    }
-  }
-
-  return false;
-}
-
-function addSetter(setter, observer, path) {
-  var list = setters.get(setter) || [];
-  path || (path = '');
-
-  if (!findInSetters(list, observer, path)) {
-    list.push({
-      observer: observer,
-      path: path
-    });
-  }
-
-  setters.set(setter, list);
-  return list;
-}
-
-function addObject(obj, observer, path) {
-  var list = objects.get(obj);
-  path || (path = '');
-
-  if (list) {
-    if (findInObjects(list, observer, path)) {
-      return list;
-    }
-
-    list.push({
-      observer: observer,
-      path: path
-    });
-  } else {
-    list = [{
-      observer: observer,
-      path: path
-    }];
-  }
-
-  objects.set(obj, list);
-  return list;
-}
-/**
- * @function deleteFromSetters
- * To delete items in the {observer, path} object list of a setter from setters map
- */
-
-
-function deleteFromSetters(observer, path) {
-  var _iteratorNormalCompletion3 = true;
-  var _didIteratorError3 = false;
-  var _iteratorError3 = undefined;
-
-  try {
-    for (var _iterator3 = setters.keys()[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-      var _key = _step3.value;
-      var list = setters.get(_key);
-      /**
-       * while deleting an item of a setter, all the paths start with the specified path should be deleted at the same time.
-       * eg. while deleting "a.b", and then "a.b.c", "a.b.d", "a.b.c.d" would be useless in the same observer.
-       * The relevant paths including:
-       * a.b
-       * a.b.*
-       * a.b[n]
-       */
-
-      for (var i = 0; i < list.length; i += 1) {
-        var item = list[i];
-        var p = item.path;
-
-        if (item.observer === observer && (p === path || !p.indexOf(path + '.') || !p.indexOf(path + '['))) {
-          list.splice(i--, 1);
-        }
-      }
-
-      setters.set(_key, list);
-    }
-  } catch (err) {
-    _didIteratorError3 = true;
-    _iteratorError3 = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion3 && _iterator3.return != null) {
-        _iterator3.return();
-      }
-    } finally {
-      if (_didIteratorError3) {
-        throw _iteratorError3;
-      }
-    }
-  }
-}
-/**
- * @function deleteFromObjects
- * To delete item in the {observer, path} object list of an object from objects map.
- */
-
-
-function deleteFromObjects(observer, path) {
-  var _iteratorNormalCompletion4 = true;
-  var _didIteratorError4 = false;
-  var _iteratorError4 = undefined;
-
-  try {
-    for (var _iterator4 = objects.keys()[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-      var _key2 = _step4.value;
-      var list = objects.get(_key2);
-
-      for (var i = 0; i < list.length; i += 1) {
-        var item = list[i];
-        var p = item.path;
-
-        if (item.observer === observer && (p === path || !p.indexOf(path + '.') || !p.indexOf(path + '['))) {
-          list.splice(i--, 1);
-        }
-      }
-
-      objects.set(_key2, list);
-    }
-  } catch (err) {
-    _didIteratorError4 = true;
-    _iteratorError4 = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion4 && _iterator4.return != null) {
-        _iterator4.return();
-      }
-    } finally {
-      if (_didIteratorError4) {
-        throw _iteratorError4;
-      }
-    }
-  }
-}
-
-var SET = 'Set'; // 23.2 Set Objects
-
-var es6_set = _collection(SET, function (get) {
-  return function Set() {
-    return get(this, arguments.length > 0 ? arguments[0] : undefined);
-  };
-}, {
-  // 23.2.3.1 Set.prototype.add(value)
-  add: function add(value) {
-    return _collectionStrong.def(_validateCollection(this, SET), value = value === 0 ? 0 : value, value);
-  }
-}, _collectionStrong);
 
 var isAsyncFunction = (function (fn) {
   return {}.toString.call(fn) === '[object AsyncFunction]';
@@ -2143,219 +1901,159 @@ function () {
   return EventEmitter;
 }();
 
+var eventcenter = new EventEmitter();
+var collector = {
+  records: [],
+  collecting: false,
+  start: function start() {
+    this.records = [];
+    this.collecting = true;
+  },
+  stop: function stop() {
+    this.collecting = false;
+    return this.records;
+  },
+  add: function add(data) {
+    this.collecting && this.records.push(data);
+  }
+};
+
+var ec = new EventEmitter();
 /**
- * a map for storing the relationships between observer and its eventcenter.
- *
- * {
- *      [observer] : eventcenter
- * }
+ * caches for storing expressions.
+ * Map( {
+ *      expression : fn
+ * } )
  */
 
-var watchers = new Map();
+var caches = new Map();
 /**
- * cache for expressions
+ * for storing the old values of each expression.
+ * Map( {
+ *      observer : Map( {
+ *          expression/function : value
+ *      } )
+ * } )
  */
 
-function watch(observer, expression, handler) {
-  var ec = watchers.get(observer);
+var values = new Map();
+/**
+ * a Set for storing all callback functions
+ */
 
-  if (!ec) {
-    ec = new EventEmitter();
-    watchers.set(observer, ec);
+var callbacks = new Set();
+/**
+ * a map for storing the relations between observers, expressions, setters, handlers and callbacks.
+ * Map( {
+ *      observer : Map( {
+ *          expression/function : Map( {
+ *              handler : [ { setter, callback } ]
+ *          } )
+ *      } )
+ * } );
+ */
+
+var handlers = new Map();
+/**
+ * To do some preparations while adding a new observer.
+ */
+
+eventcenter.on('add-observer', function (observer) {
+  if (!values.get(observer)) {
+    values.set(observer, new Map());
   }
 
-  if (isFunction(expression)) {}
+  if (!handlers.get(observer)) {
+    handlers.set(observer, new Map());
+  }
+});
+/**
+ * Processes after deleting an observer.
+ */
 
-  var cb = function cb() {
-    handler();
-  };
+eventcenter.on('delete-observer', function (observer) {
+  values.delete(observer);
+});
+/**
+ * while setting new data into an object in an observer, or deleting properties of objects in observers,
+ * all callback function should be executed again to check if the changes would effect any expressions.
+ */
 
-  ec.on(expression, cb);
+var callAllCallbacks = function callAllCallbacks() {
+  callbacks.forEach(function (cb) {
+    return cb();
+  });
+};
+
+eventcenter.on('set-value', callAllCallbacks);
+eventcenter.on('delete-property', callAllCallbacks);
+/**
+ * @function expression
+ * To convert the expression to a function.
+ *
+ * @param {Function|String} exp
+ */
+
+function expression(exp) {
+  return new Function('s', 'try{with(s)return ' + exp + '}catch(e){return null}');
+}
+/**
+ * @function setValue
+ * To store a new value for an expression of an observer and to return the old value
+ *
+ * @param {Observer} observer
+ * @param {Function|String} exp
+ * @param {*} value
+ */
+
+
+function setValue(observer, exp, value) {
+  var oldvalue;
+  var map = values.get(observer);
+  oldvalue = map.get(exp);
+
+  if (value !== oldvalue) {
+    map.set(exp, value);
+  }
+
+  return oldvalue;
 }
 
-/** 
- * @file to convert an object to an observer instance.
- *
- * There are several different situations about the translating:
- * 1. To translate a new object which has not been translated.
- *      const observer = new Observer({});
- *      
- * 2. To translate one observer multiple times.
- *      const observer = new Observer({});
- *      new Observer( observer );
- *
- *      - should not add the {observer, path} object into setters map again.
- *      
- * 3. To translate one object in one observer multiple times
- *      const obj = {};
- *      new Observer( {
- *          x : obj,
- *          y : obj
- *      } );
- *
- *      - should add {observer, path} objects into setters map multiple times with different paths.
- *
- * 4. To translate one object in different observers multiple times.
- *      const obj = {};
- *      new Observer( { x : obj } );
- *      new Observer( { x : obj } );
- *
- *      - should add {observer, path} objects into setters map multiple times with different observers and paths.
- *
- * 5. To set a new object to a observer.
- *      const observer = new Observer( { x : 1 } );
- *      Observer.set( observer, 'y', {}, observer );
- *
- *      - should get all observers, from object maps, which are using the specified, and set the new object to all the observers.
- *      - should add {observer, path} object into setters map for the object in current observer
- *
- * 6. To change a value, of an object in an observer, to an object.
- *      const observer = new Observer({ x : 1 });
- *      observer.x = {};
- *
- *      - should get all observers which are using current object, and set the value to all the observer.
- *      - if the old value is a non-empty object, remove the old value and then set the new value
- *
- * 7. To use an observer as apart of another observer.
- *      const observer = new Observer( { x : 1 } ); 
- *      new Observer( { observer } );
- */
+function setHandler(observer, exp, handler, setter, callback) {
+  var expressions = handlers.get(observer);
+  var map = expressions.get(exp);
 
-var getKeys$1 = Object.keys;
-var isArray$1 = Array.isArray;
-var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
-var defineProperty$1 = Object.defineProperty;
-var Collector = utils.Collector;
-/**
- * @function translate
- * To translate an property of an object to GETTER and SETTER.
- *
- * @param {Object} obj The object which will be translated
- * @param {String} key The name of the property
- * @param {*} val The value of the property
- * @param {String} path The path in the observer of the property
- * @param {Observer} observer
- */
-
-function translate(obj, key, val, path, observer) {
-  var descriptor = getOwnPropertyDescriptor(obj, key);
-  /**
-   * if the configurable of the property is false,
-   * the property cannot be translated
-   */
-
-  if (descriptor && !descriptor.configurable) {
+  if (!map) {
+    map = new Map();
+    map.set(handler, [{
+      setter: setter,
+      callback: callback
+    }]);
+    expressions.set(exp, map);
     return;
   }
 
-  var setter = descriptor && descriptor.set;
-  /**
-   * The property has already transformed by Observer.
-   * to add the observer and path into the map.
-   */
+  var list = map.get(handler);
 
-  if (setter && utils.isObserverSetter(setter)) {
-    /**
-     * while translating a property of an object multiple times with different values,
-     * The same setter should be used but to set the value to the new value.
-     */
-    obj[key] = val;
-    return addSetter(setter, observer, path);
+  if (!list) {
+    map.set(handler, [{
+      setter: setter,
+      callback: callback
+    }]);
   }
 
-  var getter = descriptor && descriptor.get;
-
-  var set = function OBSERVER_SETTER(v) {
-    var value = getter ? getter.call(obj) : val;
-    /**
-     * Setting the same value will not call the setter.
-     */
-
-    if (v === value) return; //console.log( `[Observer setter]: ${path}` );
-
-    if (setter) {
-      setter.call(obj, v);
-    } else {
-      /**
-       * if the old value is an object, call remove function
-       */
-      if (value && _typeof(value) === 'object') {
-        remove(obj, key);
-      }
-
-      val = v;
-      /**
-       * if the new value is an object, to set the new value with Observer.set method.
-       * it should be set to all observers which are using this object.
-       */
-
-      if (v && _typeof(v) === 'object') {
-        Observer.set(obj, key, v);
-      }
-    }
-  };
-  /**
-   * add the setter into the setters map
-   */
-
-
-  addSetter(set, observer, path);
-
-  var get = function OBSERVER_GETTER() {
-    Collector.add(set);
-    return getter ? getter.call(obj) : val;
-  };
-
-  defineProperty$1(obj, key, {
-    enumerable: descriptor ? descriptor.enumerable : true,
-    configurable: true,
-    set: set,
-    get: get
-  });
-}
-/**
- * @function traverse
- * To traverse and translate an object.
- *
- * @param {Object} obj
- * @param {Observer} observer
- * @param {String} base
- */
-
-
-function traverse(obj, observer, base) {
-  /**
-   * to add current object into the objects map
-   */
-  addObject(obj, observer, base);
-  var isarr = isArray$1(obj);
-
-  if (isarr) {
-    for (var i = 0, l = obj.length; i < l; i += 1) {
-      var item = obj[i];
-
-      if (item && _typeof(item) === 'object') {
-        traverse(item, observer, "".concat(base, "[").concat(i, "]"));
-      }
-    }
-  }
-
-  var keys = getKeys$1(obj);
+  var exists = false;
   var _iteratorNormalCompletion = true;
   var _didIteratorError = false;
   var _iteratorError = undefined;
 
   try {
-    for (var _iterator = keys[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-      var _key = _step.value;
-      var val = obj[_key]; // to skip translating the indexes of array
+    for (var _iterator = list[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var _item = _step.value;
 
-      if (isarr && isInteger(_key) && _key >= 0 && _key < obj.length) continue;
-      var path = base ? base + '.' + _key : _key;
-      translate(obj, _key, val, path, observer);
-
-      if (val && _typeof(val) === 'object') {
-        traverse(val, observer, path);
+      if (_item.setter === setter && _item.callback === callback) {
+        exists = true;
+        break;
       }
     }
   } catch (err) {
@@ -2372,35 +2070,425 @@ function traverse(obj, observer, base) {
       }
     }
   }
+
+  if (!exists) {
+    list.push({
+      setter: setter,
+      callback: callback
+    });
+  }
+}
+/**
+ * @function watch
+ * To watch changes of an expression or a function of an observer.
+ */
+
+
+function watch(observer, exp, handler) {
+  var _cb2, setters, fn;
+
+  if (isFunction(exp)) {
+    fn = exp;
+
+    _cb2 = function cb() {
+      collector.start();
+      var value = fn(observer);
+      var setters = collector.stop();
+      var _iteratorNormalCompletion2 = true;
+      var _didIteratorError2 = false;
+      var _iteratorError2 = undefined;
+
+      try {
+        for (var _iterator2 = setters[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+          var _setter = _step2.value;
+          ec.on(_setter, _cb2);
+        }
+      } catch (err) {
+        _didIteratorError2 = true;
+        _iteratorError2 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion2 && _iterator2.return != null) {
+            _iterator2.return();
+          }
+        } finally {
+          if (_didIteratorError2) {
+            throw _iteratorError2;
+          }
+        }
+      }
+
+      var oldvalue = setValue(observer, fn, value);
+
+      if (oldvalue !== value) {
+        handler(value, oldvalue, observer);
+      }
+    };
+  } else {
+    var obj = caches.get(exp);
+    var continuous;
+
+    if (!obj) {
+      fn = expression(exp);
+      continuous = /(&&)|(\|\|)|(\?.+?:)/.test(exp);
+      caches.set(exp, {
+        fn: fn,
+        continuous: continuous
+      });
+    } else {
+      fn = obj.fn;
+      continuous = obj.continuous;
+    }
+
+    _cb2 = function _cb() {
+      var value;
+
+      if (continuous) {
+        collector.start();
+        value = fn(observer);
+
+        var _setters = collector.stop();
+
+        var _iteratorNormalCompletion3 = true;
+        var _didIteratorError3 = false;
+        var _iteratorError3 = undefined;
+
+        try {
+          for (var _iterator3 = _setters[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+            var _setter2 = _step3.value;
+            ec.on(_setter2, _cb2);
+          }
+        } catch (err) {
+          _didIteratorError3 = true;
+          _iteratorError3 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion3 && _iterator3.return != null) {
+              _iterator3.return();
+            }
+          } finally {
+            if (_didIteratorError3) {
+              throw _iteratorError3;
+            }
+          }
+        }
+      } else {
+        value = fn(observer);
+      }
+
+      var oldvalue = setValue(observer, exp, value);
+
+      if (oldvalue !== value) {
+        handler(value, oldvalue, observer, exp);
+      }
+    };
+  }
+
+  collector.start();
+  var value = fn(observer);
+  setters = collector.stop();
+  setValue(observer, exp, value);
+  /**
+   * add the callback function to callbacks map, so that while changing data with Observer.set or Observer.delete all the callback functions should be executed.
+   */
+
+  callbacks.add(_cb2);
+  /**
+   * while start to watch a non-exists path in an observer,
+   * no setters would be collected by collector, and it would make an lonely callback function in callbacks map
+   * which cannot be found by handler, so, it cannot be removed while calling Observer.unwatch.
+   * To add a handler with its setter is null can resolve this issue.
+   */
+
+  setHandler(observer, exp, handler, null, _cb2);
+  var _iteratorNormalCompletion4 = true;
+  var _didIteratorError4 = false;
+  var _iteratorError4 = undefined;
+
+  try {
+    for (var _iterator4 = setters[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+      var _setter3 = _step4.value;
+      ec.on(_setter3, _cb2);
+      setHandler(observer, exp, handler, _setter3, _cb2);
+    }
+  } catch (err) {
+    _didIteratorError4 = true;
+    _iteratorError4 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion4 && _iterator4.return != null) {
+        _iterator4.return();
+      }
+    } finally {
+      if (_didIteratorError4) {
+        throw _iteratorError4;
+      }
+    }
+  }
 }
 
-function remove(obj, key) {
+function unwatch(observer, exp, handler) {
+  var map = handlers.get(observer);
+  if (!map) return;
+  map = map.get(exp);
+  if (!map) return;
+  var list = map.get(handler);
+  if (!list) return;
+  var callback;
+  var _iteratorNormalCompletion5 = true;
+  var _didIteratorError5 = false;
+  var _iteratorError5 = undefined;
+
+  try {
+    for (var _iterator5 = list[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+      var _item2 = _step5.value;
+      callback = _item2.callback;
+      ec.removeListener(_item2.setter, _item2.callback);
+    }
+  } catch (err) {
+    _didIteratorError5 = true;
+    _iteratorError5 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion5 && _iterator5.return != null) {
+        _iterator5.return();
+      }
+    } finally {
+      if (_didIteratorError5) {
+        throw _iteratorError5;
+      }
+    }
+  }
+
+  callbacks.delete(callback);
+}
+
+/** 
+ * @file to convert an object to an observer instance.
+ */
+
+var getKeys$1 = Object.keys;
+var isArray$1 = Array.isArray;
+var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+var defineProperty$1 = Object.defineProperty;
+var setPrototypeOf$1 = Object.setPrototypeOf;
+var proto$1 = Array.prototype;
+var arrMethods = Object.create(proto$1);
+/**
+ * methods which would mutate the array on which it is called.
+ *
+ * Array.prototype.fill
+ * Array.prototype.push
+ * Array.prototype.pop
+ * Array.prototype.shift
+ * Array.prototype.unshift
+ * Array.prototype.splice
+ * Array.prototype.sort
+ * Array.prototype.reverse
+ */
+
+['push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse', 'fill'].forEach(function (method) {
+  var original = proto$1[method];
+  defineProperty$1(arrMethods, method, {
+    enumerable: false,
+    writable: true,
+    configurable: true,
+    value: function value() {
+      var args = Array.prototype.slice.call(arguments);
+      var result = original.apply(this, args);
+      var inserted;
+
+      switch (method) {
+        case 'push':
+        case 'unshift':
+          inserted = args;
+          break;
+
+        case 'splice':
+          inserted = args.slice(2);
+          break;
+
+        case 'fill':
+          inserted = args[0];
+      }
+
+      if (inserted) {
+        var _iteratorNormalCompletion = true;
+        var _didIteratorError = false;
+        var _iteratorError = undefined;
+
+        try {
+          for (var _iterator = inserted[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            var _item = _step.value;
+
+            if (_item && _typeof(_item) === 'object') {
+              traverse(_item);
+            }
+          }
+        } catch (err) {
+          _didIteratorError = true;
+          _iteratorError = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion && _iterator.return != null) {
+              _iterator.return();
+            }
+          } finally {
+            if (_didIteratorError) {
+              throw _iteratorError;
+            }
+          }
+        }
+      }
+
+      ec.emit(this.__setter);
+      return result;
+    }
+  });
+  defineProperty$1(arrMethods, '$set', {
+    enumerable: false,
+    writable: true,
+    configurable: true,
+    value: function value(i, v) {
+      if (i >= this.length) {
+        this.length = +i + 1;
+      }
+
+      return this.splice(i, 1, v)[0];
+    }
+  });
+});
+
+function isObserverSetter(func) {
+  return func.name === 'OBSERVER_SETTER' || /^function\s+OBSERVER_SETTER\(\)/.test(func.toString());
+}
+/**
+ * @function translate
+ * To translate an property of an object to GETTER and SETTER.
+ *
+ * @param {Object} obj The object which will be translated
+ * @param {String} key The name of the property
+ * @param {*} val The value of the property
+ * @param {String} path The path in the observer of the property
+ * @param {Observer} observer
+ */
+
+
+function translate(obj, key, val) {
+  var descriptor = getOwnPropertyDescriptor(obj, key);
   /**
-   * getting all {observer, path} object from objects map,
-   * so that it is able to get the path of the property which is going to be deleted,
-   * and then, to delete data storing in setters map.
-   */
-  var list = objects.get(obj);
-  /**
-   * To remove all data stored in setters map
+   * if the configurable of the property is false,
+   * the property cannot be translated
    */
 
+  if (descriptor && !descriptor.configurable) {
+    return;
+  }
+
+  var setter = descriptor && descriptor.set;
+  /**
+   * The property has already transformed by Observer.
+   * to add the observer and path into the map.
+   */
+
+  if (setter && isObserverSetter(setter)) {
+    /**
+     * while translating a property of an object multiple times with different values,
+     * The same setter should be used but to set the value to the new value.
+     */
+    return obj[key] = val;
+  }
+
+  var getter = descriptor && descriptor.get;
+
+  var set = function OBSERVER_SETTER(v) {
+    var value = getter ? getter.call(obj) : val;
+    /**
+     * Setting the same value will not call the setter.
+     */
+
+    if (v === value) return; //console.log( `[Observer setter]: ${path}` );
+
+    if (setter) {
+      setter.call(obj, v);
+    } else {
+      val = v;
+      /**
+       * if the new value is an object, to set the new value with Observer.set method.
+       * it should be set to all observers which are using this object.
+       */
+
+      if (v && _typeof(v) === 'object') {
+        Observer.set(obj, key, v);
+      }
+    }
+
+    ec.emit(set);
+  };
+
+  var get = function OBSERVER_GETTER() {
+    collector.add(set);
+    return getter ? getter.call(obj) : val;
+  };
+
+  defineProperty$1(obj, key, {
+    enumerable: descriptor ? descriptor.enumerable : true,
+    configurable: true,
+    set: set,
+    get: get
+  });
+
+  if (isArray$1(val)) {
+    defineProperty$1(val, '__setter', {
+      enumerable: false,
+      writable: true,
+      configurable: true,
+      value: set
+    });
+  }
+}
+/**
+ * @function traverse
+ * To traverse and translate an object.
+ *
+ * @param {Object} obj
+ * @param {Observer} observer
+ * @param {String} base
+ */
+
+
+function traverse(obj) {
+  var isarr = isArray$1(obj);
+
+  if (isarr) {
+    setPrototypeOf$1(obj, arrMethods);
+
+    for (var i = 0, l = obj.length; i < l; i += 1) {
+      var item = obj[i];
+
+      if (item && _typeof(item) === 'object') {
+        traverse(item);
+      }
+    }
+  }
+
+  var keys = getKeys$1(obj);
   var _iteratorNormalCompletion2 = true;
   var _didIteratorError2 = false;
   var _iteratorError2 = undefined;
 
   try {
-    for (var _iterator2 = list[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-      var _item3 = _step2.value;
-      deleteFromSetters(_item3.observer, _item3.path ? _item3.path + '.' + key : key);
-    }
-    /**
-     * if the value of the property is an object, delete all data being stored in objects map.
-     * this process have to be executed after removing all data in the setters map,
-     * otherwise, the data in setters map cannot be deleted clearly,
-     * because some paths will be removed in this step before using them.
-     */
+    for (var _iterator2 = keys[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+      var _key = _step2.value;
+      var val = obj[_key]; // to skip translating the indexes of array
 
+      if (isarr && isInteger(_key) && _key >= 0 && _key < obj.length) continue;
+      translate(obj, _key, val);
+
+      if (val && _typeof(val) === 'object') {
+        traverse(val);
+      }
+    }
   } catch (err) {
     _didIteratorError2 = true;
     _iteratorError2 = err;
@@ -2415,32 +2503,6 @@ function remove(obj, key) {
       }
     }
   }
-
-  if (obj[key] && _typeof(obj[key]) === 'object') {
-    var _iteratorNormalCompletion3 = true;
-    var _didIteratorError3 = false;
-    var _iteratorError3 = undefined;
-
-    try {
-      for (var _iterator3 = list[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-        var _item2 = _step3.value;
-        deleteFromObjects(_item2.observer, _item2.path ? _item2.path + '.' + key : key);
-      }
-    } catch (err) {
-      _didIteratorError3 = true;
-      _iteratorError3 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion3 && _iterator3.return != null) {
-          _iterator3.return();
-        }
-      } finally {
-        if (_didIteratorError3) {
-          throw _iteratorError3;
-        }
-      }
-    }
-  }
 }
 
 var Observer = {
@@ -2448,9 +2510,10 @@ var Observer = {
     traverse(obj, obj);
 
     if (proto) {
-      Object.setPrototypeOf(obj, proto);
+      setPrototypeOf$1(obj, proto);
     }
 
+    eventcenter.emit('add-observer', obj);
     return obj;
   },
 
@@ -2463,50 +2526,21 @@ var Observer = {
    * @param {*} value
    */
   set: function set(obj, key, value) {
-    var list = objects.get(obj);
+    var isobj = value && _typeof(value) === 'object';
     /**
-     * The object must be translated before.
+     * to add the property to the specified object and to translate it to the format of observer.
      */
 
-    if (!list) {
-      throw new TypeError('The object has not been translated by observer.');
+    translate(obj, key, value);
+    /**
+     * if the value is an object, to traverse the object with all paths in all observers
+     */
+
+    if (isobj) {
+      traverse(value);
     }
 
-    var isobj = value && _typeof(value) === 'object';
-    var _iteratorNormalCompletion4 = true;
-    var _didIteratorError4 = false;
-    var _iteratorError4 = undefined;
-
-    try {
-      for (var _iterator4 = list[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-        var _item4 = _step4.value;
-
-        /**
-         * to add the property to the specified object and to translate it to the format of observer.
-         */
-        translate(obj, key, value, _item4.path ? _item4.path + '.' + key : key, _item4.observer);
-        /**
-         * if the value is an object, to traverse the object with all paths in all observers
-         */
-
-        if (isobj) {
-          traverse(value, _item4.observer, _item4.path ? _item4.path + '.' + key : key);
-        }
-      }
-    } catch (err) {
-      _didIteratorError4 = true;
-      _iteratorError4 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion4 && _iterator4.return != null) {
-          _iterator4.return();
-        }
-      } finally {
-        if (_didIteratorError4) {
-          throw _iteratorError4;
-        }
-      }
-    }
+    eventcenter.emit('set-value', obj, key, value);
   },
 
   /**
@@ -2517,8 +2551,8 @@ var Observer = {
    * -
    */
   delete: function _delete(obj, key) {
-    remove(obj, key);
     delete obj[key];
+    eventcenter.emit('delete-property', obj, key);
   },
 
   /**
@@ -2537,10 +2571,13 @@ var Observer = {
     }
 
     var setter = descriptor && descriptor.set;
-    return !!(setter && utils.isObserverSetter(setter));
+    return !!(setter && isObserverSetter(setter));
   },
-  watch: function watch$$1(observer, expression, handler) {
-    watch(observer, expression, handler);
+  watch: function watch$$1(observer, exp, handler) {
+    watch(observer, exp, handler);
+  },
+  unwatch: function unwatch$$1(observer, exp, handler) {
+    unwatch(observer, exp, handler);
   }
 };
 

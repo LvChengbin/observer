@@ -24,153 +24,6 @@ var isInteger = ( n, strict = false ) => {
     return false;
 }
 
-function isObserverSetter( func ) {
-    return func.name === 'OBSERVER_SETTER' || /^function\s+OBSERVER_SETTER\(\)/.test( func.toString() );
-}
-
-const cache = new Map();
-
-function expression( str ) {
-    let func = cache.get( str );
-    if( func ) return func;
-    func = new Function( 's', 'try{with(s)return ' + str + '}catch(e){return null}' );
-    cache.set( str, func );
-    return func;
-}
-
-var utils = { isObserverSetter, expression };
-
-/**
- * a map for storing the relationships between setters, paths and observer instances.
- *
- * {
- *      [ setter ] : [ {
- *          observer,
- *          path
- *      } ]
- * }
- */
-
-const setters = new Map();
-
-/**
- * a map for storing the relationships between every object, observer instances and the path of the object in the observer instance.
- *
- * {
- *      [ object ] : [ 
- *          {
- *              observer,
- *              path
- *          },
- *          {
- *              observer,
- *              path
- *          }
- *      ]
- * }
- */
-
-const objects = new Map();
-
-function findInSetters( list, observer, path ) {
-    for( const item of list ) {
-        if( item.observer === observer && item.path === path ) {
-            return true
-        }
-    }
-    return false;
-}
-
-function findInObjects( list, observer, path ) {
-    for( const item of list ) {
-        if( item.observer === observer && item.path === path ) {
-            return true;
-        }
-    }
-    return false;
-}
-
-function addSetter( setter, observer, path ) {
-    const list = setters.get( setter ) || [];
-
-    path || ( path = '' );
-
-    if( !findInSetters( list, observer, path ) ) {
-        list.push( { observer, path } );
-    }
-
-    setters.set( setter, list );
-    return list;
-}
-
-function addObject( obj, observer, path ) {
-    let list = objects.get( obj );
-
-    path || ( path = '' );
-
-    if( list ) {
-        if( findInObjects( list, observer, path ) ) {
-            return list;
-        }
-        list.push( { observer, path } );
-    } else {
-        list = [ { observer, path } ];
-    }
-
-    objects.set( obj, list );
-
-    return list;
-}
-
-/**
- * @function deleteFromSetters
- * To delete items in the {observer, path} object list of a setter from setters map
- */
-function deleteFromSetters( observer, path ) {
-    for( let key of setters.keys() ) {
-        const list = setters.get( key );
-        /**
-         * while deleting an item of a setter, all the paths start with the specified path should be deleted at the same time.
-         * eg. while deleting "a.b", and then "a.b.c", "a.b.d", "a.b.c.d" would be useless in the same observer.
-         * The relevant paths including:
-         * a.b
-         * a.b.*
-         * a.b[n]
-         */
-        for( let i = 0; i < list.length; i += 1 ) {
-            const item = list[ i ];
-            const p = item.path;
-
-            if( item.observer === observer && ( p === path || !p.indexOf( path + '.' ) || !p.indexOf( path + '[' ) ) ) {
-                list.splice( i--, 1 );
-            }
-        }
-        setters.set( key, list );
-    }
-}
-
-/**
- * @function deleteFromObjects
- * To delete item in the {observer, path} object list of an object from objects map.
- */
-function deleteFromObjects( observer, path ) {
-    for( let key of objects.keys() ) {
-        const list = objects.get( key );
-
-        for( let i = 0; i < list.length; i += 1 ) {
-            const item = list[ i ];
-            const p = item.path;
-
-
-            if( item.observer === observer && ( p === path || !p.indexOf( path + '.' ) || !p.indexOf( path + '[' ) ) ) {
-                list.splice( i--, 1 );
-            }
-        }
-
-        objects.set( key, list );
-    }
-}
-
 var isAsyncFunction = fn => ( {} ).toString.call( fn ) === '[object AsyncFunction]';
 
 var isFunction = fn => ({}).toString.call( fn ) === '[object Function]' || isAsyncFunction( fn );
@@ -241,89 +94,331 @@ class EventEmitter {
     }
 }
 
+const eventcenter = new EventEmitter();
+
+const collector = {
+    records : [],
+    collecting : false,
+    start() {
+        this.records = [];
+        this.collecting = true;
+    },
+    stop() {
+        this.collecting = false;
+        return this.records;
+    },
+    add( data ) {
+        this.collecting && this.records.push( data );
+    }
+};
+
+const ec = new EventEmitter();
+
 /**
- * a map for storing the relationships between observer and its eventcenter.
+ * caches for storing expressions.
+ * Map( {
+ *      expression : fn
+ * } )
+ */
+const caches = new Map();
+
+/**
+ * for storing the old values of each expression.
+ * Map( {
+ *      observer : Map( {
+ *          expression/function : value
+ *      } )
+ * } )
+ */
+const values = new Map();
+
+/**
+ * a Set for storing all callback functions
+ */
+const callbacks = new Set();
+
+/**
+ * a map for storing the relations between observers, expressions, setters, handlers and callbacks.
+ * Map( {
+ *      observer : Map( {
+ *          expression/function : Map( {
+ *              handler : [ { setter, callback } ]
+ *          } )
+ *      } )
+ * } );
+ */
+const handlers = new Map();
+
+/**
+ * To do some preparations while adding a new observer.
+ */
+eventcenter.on( 'add-observer', observer => {
+    if( !values.get( observer ) ) {
+        values.set( observer, new Map() );
+    }
+    if( !handlers.get( observer ) ) {
+        handlers.set( observer, new Map() );
+    }
+} );
+
+/**
+ * Processes after deleting an observer.
+ */
+eventcenter.on( 'delete-observer',  observer => {
+    values.delete( observer );
+} );
+
+/**
+ * while setting new data into an object in an observer, or deleting properties of objects in observers,
+ * all callback function should be executed again to check if the changes would effect any expressions.
+ */
+const callAllCallbacks = () => {
+    callbacks.forEach( cb => cb() );
+};
+
+eventcenter.on( 'set-value', callAllCallbacks );
+eventcenter.on( 'delete-property', callAllCallbacks );
+
+/**
+ * @function expression
+ * To convert the expression to a function.
  *
- * {
- *      [observer] : eventcenter
- * }
+ * @param {Function|String} exp
  */
-const watchers = new Map();
+function expression( exp ) {
+    return new Function( 's', 'try{with(s)return ' + exp + '}catch(e){return null}' );
+}
 
 /**
- * cache for expressions
+ * @function setValue
+ * To store a new value for an expression of an observer and to return the old value
+ *
+ * @param {Observer} observer
+ * @param {Function|String} exp
+ * @param {*} value
  */
-function watch( observer, expression, handler ) {
-    let ec = watchers.get( observer );
-    if( !ec ) {
-        ec = new EventEmitter();
-        watchers.set( observer, ec );
+function setValue( observer, exp, value ) {
+    let oldvalue;
+    let map = values.get( observer );
+    oldvalue = map.get( exp );
+
+    if( value !== oldvalue ) {
+        map.set( exp, value );
+    }
+    return oldvalue;
+}
+
+function setHandler( observer, exp, handler, setter, callback ) {
+    const expressions = handlers.get( observer );
+
+    let map = expressions.get( exp );
+
+    if( !map ) {
+        map = new Map();
+        map.set( handler, [ { setter, callback } ] );
+        expressions.set( exp, map );
+        return;
     }
 
-    if( isFunction( expression ) ) {
+    const list = map.get( handler );
+
+    if( !list ) {
+        map.set( handler, [ { setter, callback } ] );
     }
 
-    const cb = () => {
-        handler();
-    };
+    let exists = false;
 
-    ec.on( expression, cb );
+    for( let item of list ) {
+        if( item.setter === setter && item.callback === callback ) {
+            exists = true;
+            break;
+        }
+    }
+
+    if( !exists ) {
+        list.push( { setter, callback } );
+    }
+}
+
+/**
+ * @function watch
+ * To watch changes of an expression or a function of an observer.
+ */
+function watch( observer, exp, handler ) {
+
+    let cb, setters, fn;
+
+    if( isFunction( exp ) ) {
+        fn = exp;
+        cb = () => {
+            collector.start();
+            const value = fn( observer );
+            const setters = collector.stop();
+            for( let setter of setters ) {
+                ec.on( setter, cb );
+            }
+            const oldvalue = setValue( observer, fn, value );
+
+            if( oldvalue !== value ) {
+                handler( value, oldvalue, observer );
+            }
+        };
+
+    } else {
+
+        let obj = caches.get( exp );
+        let continuous;
+
+        if( !obj ) {
+            fn = expression( exp );
+            continuous = /(&&)|(\|\|)|(\?.+?:)/.test( exp );
+            caches.set( exp, { fn, continuous } );
+        } else {
+            fn = obj.fn;
+            continuous = obj.continuous;
+        }
+
+        cb = () => {
+            let value;
+            if( continuous ) {
+                collector.start();
+                value = fn( observer );
+                const setters = collector.stop();
+                for( let setter of setters ) {
+                    ec.on( setter, cb );
+                }
+            } else {
+                value = fn( observer );
+            }
+            const oldvalue = setValue( observer, exp, value );
+            
+            if( oldvalue !== value ) {
+                handler( value, oldvalue, observer, exp );
+            }
+        };
+    }
+
+    collector.start();
+    const value = fn( observer );
+    setters = collector.stop();
+    setValue( observer, exp, value );
+
+    /**
+     * add the callback function to callbacks map, so that while changing data with Observer.set or Observer.delete all the callback functions should be executed.
+     */
+    callbacks.add( cb );
+    /**
+     * while start to watch a non-exists path in an observer,
+     * no setters would be collected by collector, and it would make an lonely callback function in callbacks map
+     * which cannot be found by handler, so, it cannot be removed while calling Observer.unwatch.
+     * To add a handler with its setter is null can resolve this issue.
+     */
+    setHandler( observer, exp, handler, null, cb );
+
+    for( let setter of setters ) {
+        ec.on( setter, cb );
+        setHandler( observer, exp, handler, setter, cb );
+    }
+}
+
+function unwatch( observer, exp, handler ) {
+    let map = handlers.get( observer );
+    if( !map ) return;
+    map = map.get( exp );
+    if( !map ) return;
+    const list = map.get( handler );
+    if( !list ) return;
+
+    let callback;
+    for( let item of list ) {
+        callback = item.callback;
+        ec.removeListener( item.setter, item.callback );
+    }
+
+    callbacks.delete( callback );
 }
 
 /** 
  * @file to convert an object to an observer instance.
- *
- * There are several different situations about the translating:
- * 1. To translate a new object which has not been translated.
- *      const observer = new Observer({});
- *      
- * 2. To translate one observer multiple times.
- *      const observer = new Observer({});
- *      new Observer( observer );
- *
- *      - should not add the {observer, path} object into setters map again.
- *      
- * 3. To translate one object in one observer multiple times
- *      const obj = {};
- *      new Observer( {
- *          x : obj,
- *          y : obj
- *      } );
- *
- *      - should add {observer, path} objects into setters map multiple times with different paths.
- *
- * 4. To translate one object in different observers multiple times.
- *      const obj = {};
- *      new Observer( { x : obj } );
- *      new Observer( { x : obj } );
- *
- *      - should add {observer, path} objects into setters map multiple times with different observers and paths.
- *
- * 5. To set a new object to a observer.
- *      const observer = new Observer( { x : 1 } );
- *      Observer.set( observer, 'y', {}, observer );
- *
- *      - should get all observers, from object maps, which are using the specified, and set the new object to all the observers.
- *      - should add {observer, path} object into setters map for the object in current observer
- *
- * 6. To change a value, of an object in an observer, to an object.
- *      const observer = new Observer({ x : 1 });
- *      observer.x = {};
- *
- *      - should get all observers which are using current object, and set the value to all the observer.
- *      - if the old value is a non-empty object, remove the old value and then set the new value
- *
- * 7. To use an observer as apart of another observer.
- *      const observer = new Observer( { x : 1 } ); 
- *      new Observer( { observer } );
  */
 
 const getKeys = Object.keys;
 const isArray = Array.isArray;
 const getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 const defineProperty = Object.defineProperty;
-const Collector = utils.Collector;
+const setPrototypeOf = Object.setPrototypeOf;
 
+const proto = Array.prototype;
+const arrMethods = Object.create( proto);
+
+
+
+/**
+ * methods which would mutate the array on which it is called.
+ *
+ * Array.prototype.fill
+ * Array.prototype.push
+ * Array.prototype.pop
+ * Array.prototype.shift
+ * Array.prototype.unshift
+ * Array.prototype.splice
+ * Array.prototype.sort
+ * Array.prototype.reverse
+ */
+
+[ 'push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse', 'fill' ].forEach( method => {
+
+    const original = proto[ method ];
+
+    defineProperty( arrMethods, method, {
+        enumerable : false,
+        writable : true,
+        configurable : true,
+        value() {
+            const args = [ ...arguments ];
+            const result = original.apply( this, args );
+            let inserted;
+
+            switch( method ) {
+                case 'push' :
+                case 'unshift' :
+                    inserted = args;
+                    break;
+                case 'splice' :
+                    inserted = args.slice( 2 );
+                    break;
+                case 'fill' :
+                    inserted = args[ 0 ];
+            }
+
+            if( inserted ) {
+                for( let item of inserted ) {
+                    if( item && typeof item === 'object' ) {
+                        traverse( item );
+                    }
+                }
+            }
+            ec.emit( this.__setter );
+            return result;
+        }
+    } );
+
+    defineProperty( arrMethods, '$set', {
+        enumerable : false,
+        writable : true,
+        configurable : true,
+        value( i, v ) {
+            if( i >= this.length ) {
+                this.length = +i + 1;
+            }
+            return this.splice( i, 1, v )[ 0 ];
+        }
+    } );
+} );
+
+function isObserverSetter( func ) {
+    return func.name === 'OBSERVER_SETTER' || /^function\s+OBSERVER_SETTER\(\)/.test( func.toString() );
+}
 
 /**
  * @function translate
@@ -335,7 +430,7 @@ const Collector = utils.Collector;
  * @param {String} path The path in the observer of the property
  * @param {Observer} observer
  */
-function translate( obj, key, val, path, observer ) {
+function translate( obj, key, val ) {
     const descriptor = getOwnPropertyDescriptor( obj, key );
     /**
      * if the configurable of the property is false,
@@ -351,13 +446,12 @@ function translate( obj, key, val, path, observer ) {
      * The property has already transformed by Observer.
      * to add the observer and path into the map.
      */
-    if( setter && utils.isObserverSetter( setter ) ) {
+    if( setter && isObserverSetter( setter ) ) {
         /**
          * while translating a property of an object multiple times with different values,
          * The same setter should be used but to set the value to the new value.
          */
-        obj[ key ] = val;
-        return addSetter( setter, observer, path );
+        return obj[ key ] = val;
     }
 
     const getter = descriptor && descriptor.get;
@@ -374,12 +468,6 @@ function translate( obj, key, val, path, observer ) {
         if( setter ) {
             setter.call( obj, v );
         } else {
-            /**
-             * if the old value is an object, call remove function
-             */
-            if( value && typeof value === 'object' ) {
-                remove( obj, key );
-            }
             val = v;
 
             /**
@@ -390,15 +478,11 @@ function translate( obj, key, val, path, observer ) {
                 Observer.set( obj, key, v );
             }
         }
+        ec.emit( set );
     };
 
-    /**
-     * add the setter into the setters map
-     */
-    addSetter( set, observer, path );
-
     const get = function OBSERVER_GETTER() {
-        Collector.add( set );   
+        collector.add( set );   
         return getter ? getter.call( obj ) : val;
     };
 
@@ -408,6 +492,15 @@ function translate( obj, key, val, path, observer ) {
         set,
         get
     } );
+
+    if( isArray( val ) ) {
+        defineProperty( val, '__setter', {
+            enumerable : false,
+            writable : true,
+            configurable : true,
+            value : set
+        } );
+    }
 }
 
 /**
@@ -418,21 +511,17 @@ function translate( obj, key, val, path, observer ) {
  * @param {Observer} observer
  * @param {String} base
  */
-function traverse( obj, observer, base ) {
-
-    /**
-     * to add current object into the objects map
-     */
-    addObject( obj, observer, base );
+function traverse( obj ) {
 
     const isarr = isArray( obj );
 
     if( isarr ) {
+        setPrototypeOf( obj, arrMethods );
         for( let i = 0, l = obj.length; i < l; i += 1 ) {
             const item = obj[ i ];
 
             if( item && typeof item === 'object' ) {
-                traverse( item, observer, `${base}[${i}]` );
+                traverse( item );
             }
         }
     }
@@ -444,40 +533,10 @@ function traverse( obj, observer, base ) {
         // to skip translating the indexes of array
         if( isarr && isInteger( key ) && key >= 0 && key < obj.length ) continue;
 
-        const path = base ? base + '.' + key : key;
-
-        translate( obj, key, val, path, observer );
+        translate( obj, key, val );
 
         if( val && typeof val === 'object' ) {
-            traverse( val, observer, path );
-        }
-    }
-}
-
-function remove( obj, key ) {
-    /**
-     * getting all {observer, path} object from objects map,
-     * so that it is able to get the path of the property which is going to be deleted,
-     * and then, to delete data storing in setters map.
-     */
-    const list = objects.get( obj );
-
-    /**
-     * To remove all data stored in setters map
-     */
-    for( let item of list ) {
-        deleteFromSetters( item.observer, item.path ? item.path + '.' + key : key );
-    }
-
-    /**
-     * if the value of the property is an object, delete all data being stored in objects map.
-     * this process have to be executed after removing all data in the setters map,
-     * otherwise, the data in setters map cannot be deleted clearly,
-     * because some paths will be removed in this step before using them.
-     */
-    if( obj[ key ] && typeof obj[ key ] === 'object' ) {
-        for( let item of list ) {
-            deleteFromObjects( item.observer, item.path ? item.path + '.' + key : key );
+            traverse( val );
         }
     }
 }
@@ -486,8 +545,9 @@ const Observer = {
     create( obj, proto ) {
         traverse( obj, obj );
         if( proto ) {
-            Object.setPrototypeOf( obj, proto );
+            setPrototypeOf( obj, proto );
         }
+        eventcenter.emit( 'add-observer', obj );         
         return obj;
     },
 
@@ -500,29 +560,20 @@ const Observer = {
      * @param {*} value
      */
     set( obj, key, value ) {
-        const list = objects.get( obj );
-
-        /**
-         * The object must be translated before.
-         */
-        if( !list ) {
-            throw new TypeError( 'The object has not been translated by observer.' );
-        }
 
         const isobj = value && typeof value === 'object';
 
-        for( let item of list ) {
-            /**
-             * to add the property to the specified object and to translate it to the format of observer.
-             */
-            translate( obj, key, value, item.path ? item.path + '.' + key : key, item.observer );
-            /**
-             * if the value is an object, to traverse the object with all paths in all observers
-             */
-            if( isobj ) {
-                traverse( value, item.observer, item.path ? item.path + '.' + key : key );
-            }
+        /**
+         * to add the property to the specified object and to translate it to the format of observer.
+         */
+        translate( obj, key, value );
+        /**
+         * if the value is an object, to traverse the object with all paths in all observers
+         */
+        if( isobj ) {
+            traverse( value );
         }
+        eventcenter.emit( 'set-value', obj, key, value );
     },
 
     /**
@@ -533,8 +584,8 @@ const Observer = {
      * -
      */
     delete( obj, key ) {
-        remove( obj, key );
         delete obj[ key ];
+        eventcenter.emit( 'delete-property', obj, key );
     },
 
     /**
@@ -551,11 +602,15 @@ const Observer = {
             return false;
         }
         const setter = descriptor && descriptor.set;
-        return !!( setter && utils.isObserverSetter( setter ) );
+        return !!( setter && isObserverSetter( setter ) );
     },
 
-    watch( observer, expression, handler ) {
-        watch( observer, expression, handler );
+    watch( observer, exp, handler ) {
+        watch( observer, exp, handler );
+    },
+
+    unwatch( observer, exp, handler ) {
+        unwatch( observer, exp, handler );
     }
 };
 
