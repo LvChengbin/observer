@@ -138,44 +138,61 @@ function setHandler( observer, exp, handler, setter, callback ) {
  */
 function watch( observer, exp, handler ) {
 
+    let cb, setters, fn;
+
     if( isFunction( exp ) ) {
-        console.log( exp );
-    }
-
-    let obj = caches.get( exp );
-    let fn, continuous;
-
-    if( !obj ) {
-        fn = expression( exp );
-        continuous = /(&&)|(\|\|)|(\?.+?:)/.test( exp );
-        caches.set( exp, { fn, continuous } );
-    } else {
-        fn = obj.fn;
-        continuous = obj.continuous;
-    }
-
-    const cb = () => {
-        let value;
-        if( continuous ) {
+        fn = exp;
+        cb = () => {
             Collector.start();
-            value = fn( observer );
+            const value = fn( observer );
             const setters = Collector.stop();
             for( let setter of setters ) {
                 ec.on( setter, cb );
             }
+            const oldvalue = setValue( observer, fn, value );
+
+            if( oldvalue !== value ) {
+                handler( value, oldvalue, observer );
+            }
+        };
+
+    } else {
+
+        let obj = caches.get( exp );
+        let continuous;
+
+        if( !obj ) {
+            fn = expression( exp );
+            continuous = /(&&)|(\|\|)|(\?.+?:)/.test( exp );
+            caches.set( exp, { fn, continuous } );
         } else {
-            value = fn( observer );
+            fn = obj.fn;
+            continuous = obj.continuous;
         }
-        const oldvalue = setValue( observer, exp, value );
-        
-        if( oldvalue !== value ) {
-            handler( value, oldvalue, observer, exp );
-        }
-    };
+
+        cb = () => {
+            let value;
+            if( continuous ) {
+                Collector.start();
+                value = fn( observer );
+                const setters = Collector.stop();
+                for( let setter of setters ) {
+                    ec.on( setter, cb );
+                }
+            } else {
+                value = fn( observer );
+            }
+            const oldvalue = setValue( observer, exp, value );
+            
+            if( oldvalue !== value ) {
+                handler( value, oldvalue, observer, exp );
+            }
+        };
+    }
 
     Collector.start();
-    let value = fn( observer );
-    const setters = Collector.stop();
+    const value = fn( observer );
+    setters = Collector.stop();
     setValue( observer, exp, value );
 
     /**

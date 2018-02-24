@@ -230,6 +230,21 @@ describe( 'Observer methods', () => {
 
             observer.x = 'y';
         } );
+
+        it( 'to watch changes of a function', done => {
+            const observer = Observer.create( { 
+                x : 1,
+                y : 2
+            } );
+
+            Observer.watch( observer, ob => ob.x + ob.y, ( value, oldvalue ) => {
+                expect( value ).toEqual( 12 );
+                expect( oldvalue ).toEqual( 3 );
+                done();
+            } );
+
+            observer.x = 10;
+        } );
     } );
 
     describe( 'Observer.unwatch', () => {
@@ -266,7 +281,25 @@ describe( 'Observer methods', () => {
 
             expect( i ).toEqual( 0 );
         } );
-    } );
 
+        it( 'unwatch a function listener', () => {
+            let i = 0;
+
+            const observer = Observer.create( { 
+                x : 1,
+                y : 2
+            } );
+
+            const computed = ob => ob.x + ob.y;
+            const handler = () => i++;
+
+            Observer.watch( observer, computed, handler );
+            Observer.unwatch( observer, computed, handler );
+
+            observer.x = 10;
+
+            expect( i ).toEqual( 0 );
+        } );
+    } );
 } );
 
