@@ -1,6 +1,9 @@
 import isInteger from '@lvchengbin/is/src/integer';
 import utils from './utils';
 import { addObject, addSetter, objects, deleteFromSetters, deleteFromObjects } from './maps';
+import { watch, unwatch, ec } from './watch';
+import { eventcenter } from './global';
+import Collector from './collector';
 
 /** 
  * @file to convert an object to an observer instance.
@@ -55,7 +58,6 @@ const isArray = Array.isArray;
 const getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 const defineProperty = Object.defineProperty;
 
-
 /**
  * @function translate
  * To translate an property of an object to GETTER and SETTER.
@@ -83,6 +85,11 @@ function translate( obj, key, val, path, observer ) {
      * to add the observer and path into the map.
      */
     if( setter && utils.isObserverSetter( setter ) ) {
+        /**
+         * while translating a property of an object multiple times with different values,
+         * The same setter should be used but to set the value to the new value.
+         */
+        obj[ key ] = val;
         return addSetter( setter, observer, path );
     }
 
@@ -100,12 +107,23 @@ function translate( obj, key, val, path, observer ) {
         if( setter ) {
             setter.call( obj, v );
         } else {
+            /**
+             * if the old value is an object, call remove function
+             */
+            if( value && typeof value === 'object' ) {
+                remove( obj, key );
+            }
             val = v;
 
+            /**
+             * if the new value is an object, to set the new value with Observer.set method.
+             * it should be set to all observers which are using this object.
+             */
             if( v && typeof v === 'object' ) {
-                traverse( v, path );
+                Observer.set( obj, key, v );
             }
         }
+        ec.emit( set );
     };
 
     /**
@@ -114,9 +132,8 @@ function translate( obj, key, val, path, observer ) {
     addSetter( set, observer, path );
 
     const get = function OBSERVER_GETTER() {
-        const v = getter ? getter.call( obj ) : val;
-        //console.log( `[Observer getter]: ${path}` );
-        return v;
+        Collector.add( set );   
+        return getter ? getter.call( obj ) : val;
     };
 
     defineProperty( obj, key, {
@@ -171,37 +188,78 @@ function traverse( obj, observer, base ) {
     }
 }
 
+function remove( obj, key ) {
+    /**
+     * getting all {observer, path} object from objects map,
+     * so that it is able to get the path of the property which is going to be deleted,
+     * and then, to delete data storing in setters map.
+     */
+    const list = objects.get( obj );
+
+    /**
+     * To remove all data stored in setters map
+     */
+    for( let item of list ) {
+        deleteFromSetters( item.observer, item.path ? item.path + '.' + key : key );
+    }
+
+    /**
+     * if the value of the property is an object, delete all data being stored in objects map.
+     * this process have to be executed after removing all data in the setters map,
+     * otherwise, the data in setters map cannot be deleted clearly,
+     * because some paths will be removed in this step before using them.
+     */
+    if( obj[ key ] && typeof obj[ key ] === 'object' ) {
+        for( let item of list ) {
+            deleteFromObjects( item.observer, item.path ? item.path + '.' + key : key );
+        }
+    }
+}
+
 const Observer = {
     create( obj, proto ) {
-        if( !obj.__observer ) {
-            defineProperty( obj, '__observer', {
-                enumerable : false,
-                configurable : false,
-                value : true
-            } );
-        }
         traverse( obj, obj );
         if( proto ) {
             Object.setPrototypeOf( obj, proto );
         }
+        eventcenter.emit( 'add-observer', obj );         
         return obj;
     },
 
+    /**
+     * @method set
+     * To set a new property to an object
+     *
+     * @param {Object} obj
+     * @param {String} key
+     * @param {*} value
+     */
     set( obj, key, value ) {
-
-        if( Observer.translated( obj, key ) ) {
-            return obj[ key ] = value;
-        }
-
         const list = objects.get( obj );
 
+        /**
+         * The object must be translated before.
+         */
         if( !list ) {
             throw new TypeError( 'The object has not been translated by observer.' );
         }
 
+        const isobj = value && typeof value === 'object';
+
         for( let item of list ) {
-            translate( obj, key, value, item.path, item.observer );
+            /**
+             * to add the property to the specified object and to translate it to the format of observer.
+             */
+            translate( obj, key, value, item.path ? item.path + '.' + key : key, item.observer );
+            /**
+             * if the value is an object, to traverse the object with all paths in all observers
+             */
+            if( isobj ) {
+                traverse( value, item.observer, item.path ? item.path + '.' + key : key );
+            }
         }
+
+        eventcenter.emit( 'set-value', obj, key, value );
     },
 
     /**
@@ -212,32 +270,9 @@ const Observer = {
      * -
      */
     delete( obj, key ) {
-        /**
-         * getting all {observer, path} object from objects map,
-         * so that it is able to get the path of the property which is going to be deleted,
-         * and then, to delete data storing in setters map.
-         */
-        const list = objects.get( obj );
-
-        /**
-         * To remove all data stored in setters map
-         */
-        for( let item of list ) {
-            deleteFromSetters( item.observer, item.path ? item.path + '.' + key : key );
-        }
-
-        /**
-         * if the value of the property is an object, delete all data being stored in objects map.
-         * this process have to be executed after removing all data in the setters map,
-         * otherwise, the data in setters map cannot be deleted clearly,
-         * because some paths will be removed in this step before using them.
-         */
-        if( obj[ key ] && typeof obj[ key ] === 'object' ) {
-            for( let item of list ) {
-                deleteFromObjects( item.observer, item.path ? item.path + '.' + key : key );
-            }
-        }
+        remove( obj, key );
         delete obj[ key ];
+        eventcenter.emit( 'delete-property', obj, key );
     },
 
     /**
@@ -257,8 +292,12 @@ const Observer = {
         return !!( setter && utils.isObserverSetter( setter ) );
     },
 
-    is( observer ) {
-        return observer instanceof Observer;
+    watch( observer, exp, handler ) {
+        watch( observer, exp, handler );
+    },
+
+    unwatch( observer, exp, handler ) {
+        unwatch( observer, exp, handler );
     }
 };
 

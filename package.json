@@ -15,8 +15,10 @@
     "build": "rollup -c",
     "prepublish": "npm run build",
     "test": "karma start",
-    "test-basic" : "karma start --file=test/basic.spec.js",
-    "test-map" : "karma start --file=test/map.spec.js",
+    "test-basic": "karma start --file=test/basic.spec.js",
+    "test-map": "karma start --file=test/map.spec.js",
+    "test-collector": "karma start --file=test/collector.spec.js",
+    "test-methods": "karma start --file=test/methods.spec.js",
     "lint": "eslint ./ --cache --ignore-path .eslintignore",
     "precommit-msg": "echo 'Pre-commit checks...' && exit 0"
   },
@@ -50,7 +52,7 @@
   },
   "dependencies": {
     "@babel/polyfill": "^7.0.0-beta.39",
-    "@lvchengbin/event-emitter": "0.0.9",
+    "@lvchengbin/event-emitter": "0.1.2",
     "@lvchengbin/is": "0.0.9"
   }
 }

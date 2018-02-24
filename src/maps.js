@@ -119,7 +119,8 @@ function deleteFromObjects( observer, path ) {
             const item = list[ i ];
             const p = item.path;
 
-            if( item.observer === observer && ( p === path || p.indexOf( path + '.' ) || p.indexOf( path + '[' ) ) ) {
+
+            if( item.observer === observer && ( p === path || !p.indexOf( path + '.' ) || !p.indexOf( path + '[' ) ) ) {
                 list.splice( i--, 1 );
             }
         }
