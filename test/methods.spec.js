@@ -245,6 +245,18 @@ describe( 'Observer methods', () => {
 
             observer.x = 10;
         } );
+
+        it( 'to watch length of string', done => {
+            const observer = Observer.create( { str : 'abc' } );
+            Observer.watch( observer, 'str.length', ( value, oldvalue ) => {
+                expect( value ).toEqual( 4 );
+                expect( oldvalue ).toEqual( 3 );
+                done();
+            } );
+
+            observer.str = '1234';
+        } );
+
     } );
 
     describe( 'Observer.unwatch', () => {

@@ -189,4 +189,23 @@ describe( 'Observer', () => {
             expect( sub.a ).toEqual( 'a' );
         } );
     } );
+
+    describe( 'Working with Arrays', () => {
+        it( 'Should support array basically', () => {
+            const observer = Observer.create( [ 'a', 1, true, {} ] );
+
+            expect( observer[ 0 ] ).toEqual( 'a' );
+            expect( observer[ 1 ] ).toEqual( 1 );
+            expect( observer[ 2 ] ).toEqual( true );
+            expect( observer[ 3 ] ).toEqual( {} );
+
+            const observer2 = Observer.create( {
+                list : observer,
+                obj : []
+            }, observer );
+
+            expect( observer2.list ).toEqual( observer );
+            expect( observer2.obj ).toEqual( [] );
+        } );
+    } );
 } );

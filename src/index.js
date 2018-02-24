@@ -58,6 +58,59 @@ const isArray = Array.isArray;
 const getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 const defineProperty = Object.defineProperty;
 
+//const proto = Array.prototype;
+//const methods = Object.create( proto);
+
+
+
+/**
+ * methods which would mutate the array on which it is called.
+ *
+ * Array.prototype.fill
+ * Array.prototype.push
+ * Array.prototype.pop
+ * Array.prototype.shift
+ * Array.prototype.unshift
+ * Array.prototype.splice
+ * Array.prototype.sort
+ * Array.prototype.reverse
+ */
+
+/**
+[ 'push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse', 'fill' ].forEach( method => {
+
+    const original = proto[ method ];
+
+    defineProperty( methods, method, {
+        enumerable : false,
+        writable : true,
+        configurable : true,
+        value() {
+            const args = [ ...arguments ];
+            const result = original.apply( this, args );
+            let inserted;
+
+            switch( method ) {
+                case 'push' :
+                case 'unshift' :
+                    inserted = args;
+                    break;
+                case 'splice' :
+                    inserted = args.slice( 2 );
+                    break;
+                case 'fill' :
+                    inserted = args[ 0 ];
+                default :
+                    break;
+            }
+
+            if( inserted ) {
+            }
+        }
+    } );
+} );
+*/
+
 /**
  * @function translate
  * To translate an property of an object to GETTER and SETTER.
@@ -188,6 +241,10 @@ function traverse( obj, observer, base ) {
     }
 }
 
+/**
+ * @todo to remove listeners from eventcenter
+ * @todo to remove data from an array
+ */
 function remove( obj, key ) {
     /**
      * getting all {observer, path} object from objects map,

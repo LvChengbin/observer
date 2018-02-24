@@ -2,9 +2,9 @@
  * a map for storing the relationships between setters, paths and observer instances.
  *
  * {
- *      [ setter ] : [ {
- *          observer,
- *          path
+ *      [ setter ] : [
+ *          { observer, path },
+ *          ...
  *      } ]
  * }
  */
@@ -16,14 +16,8 @@ const setters = new Map();
  *
  * {
  *      [ object ] : [ 
- *          {
- *              observer,
- *              path
- *          },
- *          {
- *              observer,
- *              path
- *          }
+ *          { observer, path },
+ *          ...
  *      ]
  * }
  */

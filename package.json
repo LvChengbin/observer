@@ -19,6 +19,7 @@
     "test-map": "karma start --file=test/map.spec.js",
     "test-collector": "karma start --file=test/collector.spec.js",
     "test-methods": "karma start --file=test/methods.spec.js",
+    "test-array" : "karma start --file=test/array.spec.js",
     "lint": "eslint ./ --cache --ignore-path .eslintignore",
     "precommit-msg": "echo 'Pre-commit checks...' && exit 0"
   },
