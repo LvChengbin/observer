@@ -207,6 +207,15 @@ function traverse( obj ) {
 
 const Observer = {
     create( obj, proto ) {
+        if( obj.__observer ) return obj;
+
+        defineProperty( obj, '__observer', {
+            enumerable : false,
+            writable : true,
+            configurable : true,
+            value : true
+        } );
+
         traverse( obj, obj );
         if( proto ) {
             setPrototypeOf( obj, proto );
@@ -267,6 +276,10 @@ const Observer = {
         }
         const setter = descriptor && descriptor.set;
         return !!( setter && isObserverSetter( setter ) );
+    },
+
+    is( observer ) {
+        return observer.__observer || false;
     },
 
     watch( observer, exp, handler ) {

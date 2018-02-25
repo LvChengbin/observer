@@ -1,5 +1,6 @@
 import EventEmitter from '@lvchengbin/event-emitter';
 import isFunction from '@lvchengbin/is/src/function';
+import isPromise from '@lvchengbin/is/src/promise';
 import { eventcenter, collector } from './global';
 
 
@@ -148,10 +149,20 @@ function watch( observer, exp, handler ) {
             for( let setter of setters ) {
                 ec.on( setter, cb );
             }
-            const oldvalue = setValue( observer, fn, value );
 
-            if( oldvalue !== value ) {
-                handler( value, oldvalue, observer );
+            if( isPromise( value ) ) {
+                value.then( val => {
+                    const oldvalue = setValue( observer, fn, val );
+
+                    if( oldvalue !== val ) {
+                        handler( val, oldvalue, observer );
+                    }
+                } );
+            } else {
+                const oldvalue = setValue( observer, fn, value );
+                if( oldvalue !== value ) {
+                    handler( value, oldvalue, observer );
+                }
             }
         };
 
