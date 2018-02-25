@@ -98,6 +98,8 @@ class EventEmitter {
     }
 }
 
+var isPromise = p => p && isFunction( p.then );
+
 const eventcenter = new EventEmitter();
 
 const collector = {
@@ -168,8 +170,22 @@ eventcenter.on( 'add-observer', observer => {
 /**
  * Processes after deleting an observer.
  */
-eventcenter.on( 'delete-observer',  observer => {
-    values.delete( observer );
+eventcenter.on( 'destroy-observer',  observer => {
+    const map = handlers.get( observer );
+
+    map.forEach( hmap => {
+        hmap.forEach( value => {
+            if( !value.length ) return;
+            for( const item of value ) {
+                ec.removeListener( item.setter, item.callback );
+            }
+            callbacks.delete( value[ 0 ].callback );
+        } ); 
+    } );
+
+
+    handlers.set( observer, new Map() );
+    values.set( observer, new Map() );
 } );
 
 /**
@@ -261,10 +277,20 @@ function watch( observer, exp, handler ) {
             for( let setter of setters ) {
                 ec.on( setter, cb );
             }
-            const oldvalue = setValue( observer, fn, value );
 
-            if( oldvalue !== value ) {
-                handler( value, oldvalue, observer );
+            if( isPromise( value ) ) {
+                value.then( val => {
+                    const oldvalue = setValue( observer, fn, val );
+
+                    if( oldvalue !== val ) {
+                        handler( val, oldvalue, observer );
+                    }
+                } );
+            } else {
+                const oldvalue = setValue( observer, fn, value );
+                if( oldvalue !== value ) {
+                    handler( value, oldvalue, observer );
+                }
             }
         };
 
@@ -305,7 +331,11 @@ function watch( observer, exp, handler ) {
     collector.start();
     const value = fn( observer );
     setters = collector.stop();
-    setValue( observer, exp, value );
+    if( isPromise( value ) ) {
+        value.then( val => setValue( observer, exp, val ) );
+    } else {
+        setValue( observer, exp, value );
+    }
 
     /**
      * add the callback function to callbacks map, so that while changing data with Observer.set or Observer.delete all the callback functions should be executed.
@@ -333,13 +363,11 @@ function unwatch( observer, exp, handler ) {
     const list = map.get( handler );
     if( !list ) return;
 
-    let callback;
     for( let item of list ) {
-        callback = item.callback;
         ec.removeListener( item.setter, item.callback );
     }
 
-    callbacks.delete( callback );
+    callbacks.delete( list[ 0 ].callback );
 }
 
 /** 
@@ -402,7 +430,7 @@ const arrMethods = Object.create( proto);
                     }
                 }
             }
-            ec.emit( this.__setter );
+            this.__fake_setter ? ec.emit( this.__fake_setter ) : ec.emit( this.__setter );
             return result;
         }
     } );
@@ -416,6 +444,27 @@ const arrMethods = Object.create( proto);
                 this.length = +i + 1;
             }
             return this.splice( i, 1, v )[ 0 ];
+        }
+    } );
+
+    defineProperty( arrMethods, '$get', {
+        enumerable : false,
+        writable : true,
+        configurable : true,
+        value( i ) {
+            const setter = this.__fake_setter;
+            setter && collector.add( setter );
+            return this[ i ];
+        }
+    } );
+
+    defineProperty( arrMethods, '$length', {
+        enumerable : false,
+        writable : true,
+        configurable : true,
+        value( i ) {
+            this.length = i;
+            this.__fake_setter ? ec.emit( this.__fake_setter ) : ec.emit( this.__setter );
         }
     } );
 } );
@@ -467,8 +516,6 @@ function translate( obj, key, val ) {
          */
         if( v === value ) return;
 
-        //console.log( `[Observer setter]: ${path}` );
-        
         if( setter ) {
             setter.call( obj, v );
         } else {
@@ -547,7 +594,25 @@ function traverse( obj ) {
 
 const Observer = {
     create( obj, proto ) {
-        traverse( obj, obj );
+        if( obj.__observer ) return obj;
+
+        defineProperty( obj, '__observer', {
+            enumerable : false,
+            writable : true,
+            configurable : true,
+            value : true
+        } );
+
+        if( isArray( obj ) ) {
+            defineProperty( obj, '__fake_setter', {
+                enumerable : false,
+                writable : true,
+                configurable : true,
+                value : function OBSERVER_SETTER() {}
+            } );
+        }
+
+        traverse( obj );
         if( proto ) {
             setPrototypeOf( obj, proto );
         }
@@ -564,6 +629,13 @@ const Observer = {
      * @param {*} value
      */
     set( obj, key, value ) {
+
+        /**
+         * if the object is an array and the key is a integer, set the value with [].$set
+         */
+        if( isArray( obj ) && isInteger( key, true ) ) {
+            return obj.$set( key, value );
+        }
 
         const isobj = value && typeof value === 'object';
 
@@ -609,12 +681,20 @@ const Observer = {
         return !!( setter && isObserverSetter( setter ) );
     },
 
+    is( observer ) {
+        return observer.__observer || false;
+    },
+
     watch( observer, exp, handler ) {
         watch( observer, exp, handler );
     },
 
     unwatch( observer, exp, handler ) {
         unwatch( observer, exp, handler );
+    },
+
+    destroy( observer ) {
+        eventcenter.emit( 'destroy-observer', observer );
     }
 };
 

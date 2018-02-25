@@ -56,8 +56,22 @@ eventcenter.on( 'add-observer', observer => {
 /**
  * Processes after deleting an observer.
  */
-eventcenter.on( 'delete-observer',  observer => {
-    values.delete( observer );
+eventcenter.on( 'destroy-observer',  observer => {
+    const map = handlers.get( observer );
+
+    map.forEach( hmap => {
+        hmap.forEach( value => {
+            if( !value.length ) return;
+            for( const item of value ) {
+                ec.removeListener( item.setter, item.callback );
+            }
+            callbacks.delete( value[ 0 ].callback );
+        } ); 
+    } )
+
+
+    handlers.set( observer, new Map() );
+    values.set( observer, new Map() );
 } );
 
 /**
@@ -203,7 +217,11 @@ function watch( observer, exp, handler ) {
     collector.start();
     const value = fn( observer );
     setters = collector.stop();
-    setValue( observer, exp, value );
+    if( isPromise( value ) ) {
+        value.then( val => setValue( observer, exp, val ) );
+    } else {
+        setValue( observer, exp, value );
+    }
 
     /**
      * add the callback function to callbacks map, so that while changing data with Observer.set or Observer.delete all the callback functions should be executed.
@@ -231,13 +249,11 @@ function unwatch( observer, exp, handler ) {
     const list = map.get( handler );
     if( !list ) return;
 
-    let callback;
     for( let item of list ) {
-        callback = item.callback;
         ec.removeListener( item.setter, item.callback );
     }
 
-    callbacks.delete( callback );
+    callbacks.delete( list[ 0 ].callback );
 }
 
 export { watch, unwatch, ec };

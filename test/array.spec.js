@@ -122,5 +122,65 @@ describe( 'Array', () => {
 
             observer.arr.fill( 'x', 2, 3 );
         } );
+
+        it( '$set', done => {
+            const observer = Observer.create( { arr : [ 'd', 'c', 'b', 'a' ] } );
+
+            Observer.watch( observer, 'arr.join(",")', ( value, oldvalue ) => {
+                expect( value ).toEqual( 'd,c,x,a' );
+                expect( oldvalue ).toEqual( 'd,c,b,a' );
+                done();
+            } );
+
+            observer.arr.$set( 2, 'x' );
+        } );
+
+        it( '$length', done => {
+            const observer = Observer.create( { arr : [ 'd', 'c', 'b', 'a' ] } );
+
+            Observer.watch( observer, 'arr.join(",")', ( value, oldvalue ) => {
+                expect( value ).toEqual( 'd,c' );
+                expect( oldvalue ).toEqual( 'd,c,b,a' );
+                done();
+            } );
+
+            observer.arr.$length( 2 );
+        } );
+
+        it( 'using array as the root object of the observer', done => {
+            const observer = Observer.create( [ 'a', 'b', 'c' ] );
+
+            Observer.watch( observer, ob => ob.$get( 0 ) + ob.$get( 1 ), ( value, oldvalue ) => {
+                expect( value ).toEqual( '1b' );
+                expect( oldvalue ).toEqual( 'ab' );
+                done();
+            } );
+
+            observer.$set( 0, '1' );
+        } );
+
+        it( 'watching expression while using array as the root object of the observer', done => {
+            const observer = Observer.create( [ 'a', 'b', 'c' ] );
+
+            Observer.watch( observer, '$get(0) + $get(1)', ( value, oldvalue ) => {
+                expect( value ).toEqual( '1b' );
+                expect( oldvalue ).toEqual( 'ab' );
+                done();
+            } );
+
+            observer.$set( 0, '1' );
+        } );
+
+        it( 'set array value with Observer.set', done => {
+            const observer = Observer.create( [ 'a', 'b', 'c' ] );
+
+            Observer.watch( observer, '$get(0) + $get(1)', ( value, oldvalue ) => {
+                expect( value ).toEqual( '1b' );
+                expect( oldvalue ).toEqual( 'ab' );
+                done();
+            } );
+
+            Observer.set( observer, 0, '1' );
+        } );
     } );
 } );

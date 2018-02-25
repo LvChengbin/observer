@@ -62,7 +62,7 @@ const arrMethods = Object.create( proto);
                     }
                 }
             }
-            ec.emit( this.__setter );
+            this.__fake_setter ? ec.emit( this.__fake_setter ) : ec.emit( this.__setter );
             return result;
         }
     } );
@@ -76,6 +76,27 @@ const arrMethods = Object.create( proto);
                 this.length = +i + 1;
             }
             return this.splice( i, 1, v )[ 0 ];
+        }
+    } );
+
+    defineProperty( arrMethods, '$get', {
+        enumerable : false,
+        writable : true,
+        configurable : true,
+        value( i ) {
+            const setter = this.__fake_setter;
+            setter && collector.add( setter );
+            return this[ i ];
+        }
+    } );
+
+    defineProperty( arrMethods, '$length', {
+        enumerable : false,
+        writable : true,
+        configurable : true,
+        value( i ) {
+            this.length = i;
+            this.__fake_setter ? ec.emit( this.__fake_setter ) : ec.emit( this.__setter );
         }
     } );
 } );
@@ -127,8 +148,6 @@ function translate( obj, key, val ) {
          */
         if( v === value ) return;
 
-        //console.log( `[Observer setter]: ${path}` );
-        
         if( setter ) {
             setter.call( obj, v );
         } else {
@@ -216,7 +235,16 @@ const Observer = {
             value : true
         } );
 
-        traverse( obj, obj );
+        if( isArray( obj ) ) {
+            defineProperty( obj, '__fake_setter', {
+                enumerable : false,
+                writable : true,
+                configurable : true,
+                value : function OBSERVER_SETTER() {}
+            } );
+        }
+
+        traverse( obj );
         if( proto ) {
             setPrototypeOf( obj, proto );
         }
@@ -233,6 +261,13 @@ const Observer = {
      * @param {*} value
      */
     set( obj, key, value ) {
+
+        /**
+         * if the object is an array and the key is a integer, set the value with [].$set
+         */
+        if( isArray( obj ) && isInteger( key, true ) ) {
+            return obj.$set( key, value );
+        }
 
         const isobj = value && typeof value === 'object';
 
@@ -288,6 +323,10 @@ const Observer = {
 
     unwatch( observer, exp, handler ) {
         unwatch( observer, exp, handler );
+    },
+
+    destroy( observer ) {
+        eventcenter.emit( 'destroy-observer', observer );
     }
 };
 

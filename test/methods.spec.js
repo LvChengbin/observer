@@ -1,3 +1,4 @@
+import Promise from '@lvchengbin/promise';
 import Observer from '../src/index';
 
 describe( 'Observer methods', () => {
@@ -246,6 +247,31 @@ describe( 'Observer methods', () => {
             observer.x = 10;
         } );
 
+        it( 'to watch a function which retucns a Promise', done => {
+            const observer = Observer.create( { 
+                x : 1,
+                y : 2
+            } );
+
+            const computed =  ob => {
+                return new Promise( resolve => {
+                    const y = ob.y;
+                    setTimeout( () => {
+                        resolve( y );
+                    }, 10 );
+                } );
+            };
+
+            Observer.watch( observer, computed, ( value, oldvalue ) => {
+                expect( value ).toEqual( 100 );
+                expect( oldvalue ).toEqual( 2 );
+                done();
+            } );
+
+            observer.y = 100;
+            
+        } );
+
         it( 'to watch length of string', done => {
             const observer = Observer.create( { str : 'abc' } );
             Observer.watch( observer, 'str.length', ( value, oldvalue ) => {
@@ -309,6 +335,32 @@ describe( 'Observer methods', () => {
             Observer.unwatch( observer, computed, handler );
 
             observer.x = 10;
+
+            expect( i ).toEqual( 0 );
+        } );
+    } );
+
+    describe( 'Observer.destroy', () => {
+        it( 'should unwatch all watching listeners after calling destroy', () => {
+
+            let i = 0;
+
+            const observer = Observer.create( {
+                x : 1,
+                y : 1
+            } )
+
+            const handler = () => i++;
+
+            Observer.watch( observer, 'x', handler );
+            Observer.watch( observer, ob => ob.y, handler );
+            Observer.watch( observer, 'z', handler );
+
+            Observer.destroy( observer );
+
+            observer.x = 2;
+            observer.y = 2;
+            Observer.set( observer, 'x', 3 );
 
             expect( i ).toEqual( 0 );
         } );

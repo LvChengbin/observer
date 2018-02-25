@@ -1,6 +1,6 @@
 # Observer
 
-To watch the changes of an `Object`, supporting using expressions and computed function.
+A library for watching the changes of objects, and the changes of return values of expressions or functions.
 
 
 <!-- vim-markdown-toc GFM -->
@@ -124,16 +124,21 @@ Observer.watch( sub2, () => {
     observer.arr.sort();
     ```
 
- - Even though we can use an array for creating an observer, but you cannot watch it like: `[0] + [1]`, if you want to watch the changes of an observer like this, please try using a `Function` as the expression.
+ - Even though we can use an array for creating an observer, but you cannot watch it like: `[0] + [1]`, if you want to watch the changes of an observer like this, please try using a `[].$get` method.
 
     ```js
     const observer = Observer.create( [ 'a', 'b', 'c' ] );
-    Observer.watch( observer, ob => ob[ 0 ] + ob[ 1 ], value => {
+    Observer.watch( observer, ob => ob.$get( 0 ) + ob.get( 1 ), value => {
+        console.log( value );
+    } );
+
+    Observer.watch( observer, '$get( 0 ) + $get( 1 )', value => {
         console.log( value );
     } );
     ```
 
  - For avoiding to execute same handler multiple times while changing one value, in the observer, one global `EventCenter` instance is being used for all the observers created by `Observer.create`. Because each object can be used in multiple observers, and each expression may depend multiple objects and values, so there might be some problems while unwatch an expression or function if the handler is aslo being used for other expressions or functions. So, it is better not to use one handler for multiple expressions or functions multiple times.
+
 ### API
 
 #### Observer.create
@@ -219,7 +224,7 @@ Observer.watch( observer, expression, handler );
     The observer that you want to watch.
 
  - **expression** `String|Function`
-    The exppression that you want to watch. It also can be a `Function` which returns a value or returns a promise instance.
+    The exppression that you want to watch. It also can be a `Function` which returns a value or returns a promise instance. If the return value is a promise instance, you need to manage the order of the async function by yourself.
 
  - **handler** `Function`
     The hander which would execute while the value of expression changed.
