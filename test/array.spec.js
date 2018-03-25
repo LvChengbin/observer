@@ -2,6 +2,7 @@ import Observer from '../src/index';
 
 describe( 'Array', () => {
     describe( 'Observer.watch', () => {
+
         it( 'working with simple array', done => {
             const observer = Observer.create( { arr : [ 1, 'a', true, { x : 1 } ] } );
 

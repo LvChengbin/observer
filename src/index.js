@@ -41,7 +41,7 @@ const arrMethods = Object.create( proto);
         value() {
             const args = [ ...arguments ];
             const result = original.apply( this, args );
-            let inserted;
+            let inserted, deleted;
 
             switch( method ) {
                 case 'push' :
@@ -50,9 +50,23 @@ const arrMethods = Object.create( proto);
                     break;
                 case 'splice' :
                     inserted = args.slice( 2 );
+                    deleted = result;
                     break;
                 case 'fill' :
                     inserted = args[ 0 ];
+                    break;
+                case 'pop' :
+                case 'shift' :
+                    deleted = [ result ];
+                    break;
+            }
+
+            if( deleted ) {
+                for( const item of deleted ) {
+                    if( item && typeof item === 'object' ) {
+                        eventcenter.emit( 'delete-property', item );
+                    }
+                }
             }
 
             if( inserted ) {
@@ -158,7 +172,11 @@ function translate( obj, key, val ) {
              * it should be set to all observers which are using this object.
              */
             if( v && typeof v === 'object' ) {
-                Observer.set( obj, key, v );
+                traverse( v );
+            }
+
+            if( value && typeof value === 'object' ) {
+                eventcenter.emit( 'overwrite-object', v, value );
             }
         }
         ec.emit( set );
@@ -269,6 +287,12 @@ const Observer = {
             return obj.$set( key, value );
         }
 
+        const old = obj[ key ];
+
+        if( old && typeof old === 'object' ) {
+            ec.emit( 'overwrite-object', value, old );
+        }
+
         const isobj = value && typeof value === 'object';
 
         /**
@@ -281,7 +305,7 @@ const Observer = {
         if( isobj ) {
             traverse( value );
         }
-        eventcenter.emit( 'set-value', obj, key, value );
+        eventcenter.emit( 'set-value', obj, key, value, old );
     },
 
     /**
@@ -292,8 +316,11 @@ const Observer = {
      * -
      */
     delete( obj, key ) {
+        const old = obj[ key ];
+        const descriptor = Object.getOwnPropertyDescriptor( obj, key );
+        const setter = descriptor && descriptor.set;
         delete obj[ key ];
-        eventcenter.emit( 'delete-property', obj, key );
+        eventcenter.emit( 'delete-property', old, setter );
     },
 
     /**

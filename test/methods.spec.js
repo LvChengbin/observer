@@ -2,6 +2,7 @@ import Promise from '@lvchengbin/promise';
 import Observer from '../src/index';
 
 describe( 'Observer methods', () => {
+
     it( 'Observer.translated', () => {
         const observer = Observer.create( {
             x : 1,
@@ -232,6 +233,39 @@ describe( 'Observer methods', () => {
             observer.x = 'y';
         } );
 
+        it( 'should not work if an object was delete fron an Observer', () => {
+            const obj = { x : 1 };
+            const observer = Observer.create( { obj } );
+
+            let i = 0;
+
+            Observer.watch( observer, 'obj.x', () => {
+                i++;
+            } );
+
+            Observer.delete( observer, 'obj' );
+
+            obj.x = 2;
+
+            expect( i ).toEqual( 1 );
+        } );
+
+
+        it( 'should not work if an object was delete from an Observer', done => {
+            const obj = { x : 1 };
+            const observer = Observer.create( { obj } );
+
+            Observer.watch( observer, 'obj.x', () => {
+                if( observer.obj.z ) {
+                    done();
+                }
+            } );
+
+            observer.obj.x = 2;
+            observer.obj = { z : 1, x : 1 };
+            observer.obj.x = 3;
+        } );
+
         it( 'to watch changes of a function', done => {
             const observer = Observer.create( { 
                 x : 1,
@@ -247,7 +281,7 @@ describe( 'Observer methods', () => {
             observer.x = 10;
         } );
 
-        it( 'to watch a function which retucns a Promise', done => {
+        it( 'to watch a function which returns a Promise', done => {
             const observer = Observer.create( { 
                 x : 1,
                 y : 2
@@ -283,6 +317,63 @@ describe( 'Observer methods', () => {
             observer.str = '1234';
         } );
 
+    } );
+
+    describe( 'Watching with inherited data', () => {
+
+        it( 'basic supporting', done => {
+            const ob1 = Observer.create( { x : 1 } );
+            const ob2 = Observer.create( { y : 2 }, ob1 );
+
+            Observer.watch( ob2, 'x + y', ( value, oldvalue ) => {
+                expect( value ).toEqual( 4 );
+                expect( oldvalue ).toEqual( 3 );
+                done();
+            } );
+
+            ob1.x = 2;
+        } );
+
+        it( 'overwriting data in sub observer', done => {
+            const ob1 = Observer.create( { x : 1 } );
+            const ob2 = Observer.create( { y : 2 }, ob1 );
+
+            Observer.watch( ob2, 'x + y', ( value, oldvalue ) => {
+                expect( value ).toEqual( 4 );
+                expect( oldvalue ).toEqual( 3 );
+                done();
+            } );
+
+            Observer.set( ob2, 'x', 2 );
+        } );
+
+        it( 'delete value from super observer', done => {
+
+            const ob1 = Observer.create( { x : 1 } );
+            const ob2 = Observer.create( { y : 2 }, ob1 );
+
+            Observer.watch( ob2, 'x + y', ( value, oldvalue ) => {
+                expect( value ).toEqual( null );
+                expect( oldvalue ).toEqual( 3 );
+                done();
+            } );
+
+            Observer.delete( ob1, 'x' );
+        } );
+
+        it( 'delete value from sub observer', done => {
+
+            const ob1 = Observer.create( { x : 1 } );
+            const ob2 = Observer.create( { y : 2, x : 2 }, ob1 );
+
+            Observer.watch( ob2, 'x + y', ( value, oldvalue ) => {
+                expect( value ).toEqual( 3 );
+                expect( oldvalue ).toEqual( 4 );
+                done();
+            } );
+
+            Observer.delete( ob2, 'x' );
+        } );
     } );
 
     describe( 'Observer.unwatch', () => {

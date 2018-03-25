@@ -1,8 +1,7 @@
 import EventEmitter from '@lvchengbin/event-emitter';
 import isFunction from '@lvchengbin/is/src/function';
 import isPromise from '@lvchengbin/is/src/promise';
-import { eventcenter, collector } from './global';
-
+import { eventcenter, collector, isSubset } from './global';
 
 const ec = new EventEmitter();
 
@@ -41,6 +40,7 @@ const callbacks = new Set();
  */
 const handlers = new Map();
 
+
 /**
  * To do some preparations while adding a new observer.
  */
@@ -69,7 +69,6 @@ eventcenter.on( 'destroy-observer',  observer => {
         } ); 
     } )
 
-
     handlers.set( observer, new Map() );
     values.set( observer, new Map() );
 } );
@@ -78,12 +77,70 @@ eventcenter.on( 'destroy-observer',  observer => {
  * while setting new data into an object in an observer, or deleting properties of objects in observers,
  * all callback function should be executed again to check if the changes would effect any expressions.
  */
-const callAllCallbacks = () => {
+eventcenter.on( 'set-value', () => {
     callbacks.forEach( cb => cb() );
+} );
+
+/**
+ * to delete relevent data of a setter of an observer, for releasing useless memory.
+ */
+const deleteSetterFromObserver = ( observer, setter ) => {
+    const ob = handlers.get( observer );
+    if( !ob ) return;
+
+    ob.forEach( val => {
+        val.forEach( value => {
+            for( let i = 0, l = value.length; i < l; i += 1 ) {
+                const item = value[ i ];
+                if( item.setter === setter ) {
+                    ec.removeListener( setter, item.callback );
+                    callbacks.delete( item.callback );
+                    value.splice( i--, 1 );
+                    l--;
+                }
+            }
+        } );
+    } );
+}
+
+/**
+ * to remove useless listeners for release memory.
+ */
+const gc = ( obj, keys ) => {
+
+    if( !obj || typeof obj !== 'object' ) return;
+
+    handlers.forEach( ( v, observer ) => {
+        if( isSubset( obj, observer ) ) return;
+
+        if( !keys ) {
+            keys = Object.keys( obj );
+        }
+        
+        for( const key of keys ) {
+            const descriptor = Object.getOwnPropertyDescriptor( obj, key );
+            const setter = descriptor && descriptor.set;
+            if( !setter ) continue;
+            deleteSetterFromObserver( observer, setter );
+            const item = obj[ key ];
+            if( item && typeof item === 'object' ) {
+                gc( item );
+            }
+        }
+    } );
 };
 
-eventcenter.on( 'set-value', callAllCallbacks );
-eventcenter.on( 'delete-property', callAllCallbacks );
+eventcenter.on( 'overwrite-object', ( val, old ) => {
+    gc( old );
+} );
+
+eventcenter.on( 'delete-property', ( deleted, setter ) => {
+    callbacks.forEach( cb => cb() );
+    setter && handlers.forEach( ( v, observer ) => {
+        deleteSetterFromObserver( observer, setter );
+    } );
+    gc( deleted );
+} );
 
 /**
  * @function expression
@@ -182,29 +239,20 @@ function watch( observer, exp, handler ) {
 
     } else {
 
-        let obj = caches.get( exp );
-        let continuous;
+        fn = caches.get( exp );
 
-        if( !obj ) {
+        if( !fn ) {
             fn = expression( exp );
-            continuous = /(&&)|(\|\|)|(\?.+?:)/.test( exp );
-            caches.set( exp, { fn, continuous } );
-        } else {
-            fn = obj.fn;
-            continuous = obj.continuous;
+            caches.set( exp, fn );
         }
 
         cb = () => {
             let value;
-            if( continuous ) {
-                collector.start();
-                value = fn( observer );
-                const setters = collector.stop();
-                for( let setter of setters ) {
-                    ec.on( setter, cb );
-                }
-            } else {
-                value = fn( observer );
+            collector.start();
+            value = fn( observer );
+            const setters = collector.stop();
+            for( let setter of setters ) {
+                ec.on( setter, cb );
             }
             const oldvalue = setValue( observer, exp, value );
             
@@ -253,6 +301,7 @@ function unwatch( observer, exp, handler ) {
         ec.removeListener( item.setter, item.callback );
     }
 
+    map.delete( handler );
     callbacks.delete( list[ 0 ].callback );
 }
 

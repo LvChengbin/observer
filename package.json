@@ -1,6 +1,6 @@
 {
   "name": "@lvchengbin/observer",
-  "version": "0.0.0",
+  "version": "0.0.2",
   "description": "A library for watching the changes of objects, and the changes of return values of expressions or functions",
   "keywords": [
     "observer",
@@ -53,8 +53,8 @@
     "rollup-plugin-node-resolve": "^3.0.2"
   },
   "dependencies": {
-    "@babel/polyfill": "^7.0.0-beta.39",
     "@lvchengbin/event-emitter": "0.1.2",
-    "@lvchengbin/is": "0.0.9"
+    "@lvchengbin/is": "0.0.9",
+    "@lvchengbin/sequence": "^1.0.0"
   }
 }
