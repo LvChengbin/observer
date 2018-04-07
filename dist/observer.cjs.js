@@ -792,7 +792,14 @@ const Observer = {
             }
         }
 
-        return Object.assign( observer, data );
+        for( const key of Object.keys( data ) ) {
+            if( observer.hasOwnProperty( key ) ) {
+                observer[ key ] = data[ key ];
+            } else {
+                Observer.set( observer, key, data[ key ] );
+            }
+        }
+        return observer;
     },
 
     destroy( observer ) {

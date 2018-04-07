@@ -1,6 +1,6 @@
 {
   "name": "@lvchengbin/observer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A library for watching the changes of objects, and the changes of return values of expressions or functions",
   "keywords": [
     "observer",

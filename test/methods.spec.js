@@ -317,6 +317,21 @@ describe( 'Observer methods', () => {
             observer.str = '1234';
         } );
 
+        it( 'watching after replace', done => {
+            const observer = Observer.create( { x : 1, y : 2 } );
+            Observer.watch( observer, 'm + n', ( value, oldvalue ) => {
+                expect( value ).toEqual( 3 );
+                expect( oldvalue ).toEqual( null );
+                done();
+            } );
+
+            Observer.replace( observer, {
+                m : 1,
+                n : 2
+            } );
+
+        } );
+
     } );
 
     describe( 'Watching with inherited data', () => {

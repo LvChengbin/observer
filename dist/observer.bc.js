@@ -1100,7 +1100,19 @@ var Observer = {
       }
     }
 
-    return Object.assign(observer, data);
+    var _arr2 = Object.keys(data);
+
+    for (var _i2 = 0; _i2 < _arr2.length; _i2++) {
+      var _key2 = _arr2[_i2];
+
+      if (observer.hasOwnProperty(_key2)) {
+        observer[_key2] = data[_key2];
+      } else {
+        Observer.set(observer, _key2, data[_key2]);
+      }
+    }
+
+    return observer;
   },
   destroy: function destroy(observer) {
     eventcenter.emit('destroy-observer', observer);
