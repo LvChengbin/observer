@@ -1089,6 +1089,19 @@ var Observer = {
   unwatch: function unwatch$$1(observer, exp, handler) {
     unwatch(observer, exp, handler);
   },
+  replace: function replace(observer, data) {
+    var _arr = Object.keys(observer);
+
+    for (var _i = 0; _i < _arr.length; _i++) {
+      var key = _arr[_i];
+
+      if (!data.hasOwnProperty(key)) {
+        Observer.delete(observer, key);
+      }
+    }
+
+    return Object.assign(observer, data);
+  },
   destroy: function destroy(observer) {
     eventcenter.emit('destroy-observer', observer);
   }

@@ -456,5 +456,24 @@ describe( 'Observer methods', () => {
             expect( i ).toEqual( 0 );
         } );
     } );
+
+    describe( 'Observer.replace', () => {
+        it( 'should have replaced all data of the observer', () => {
+            const observer = Observer.create( {
+                x : 1,
+                y : 2
+            } );
+
+            Observer.replace( observer, {
+                x : 10,
+                n : 100
+            } );
+
+            expect( observer ).toEqual( {
+                x : 10,
+                n : 100
+            } );
+        } );
+    } );
 } );
 

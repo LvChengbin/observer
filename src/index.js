@@ -352,6 +352,16 @@ const Observer = {
         unwatch( observer, exp, handler );
     },
 
+    replace( observer, data ) {
+        for( const key of Object.keys( observer ) ) {
+            if( !data.hasOwnProperty( key ) ) {
+                Observer.delete( observer, key );
+            }
+        }
+
+        return Object.assign( observer, data );
+    },
+
     destroy( observer ) {
         eventcenter.emit( 'destroy-observer', observer );
     }
