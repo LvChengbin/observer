@@ -305,4 +305,8 @@ function unwatch( observer, exp, handler ) {
     callbacks.delete( list[ 0 ].callback );
 }
 
-export { watch, unwatch, ec };
+function calc( observer, exp ) {
+    return expression( exp )( observer );
+}
+
+export { watch, unwatch, ec, calc };

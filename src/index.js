@@ -1,5 +1,5 @@
 import isInteger from '@lvchengbin/is/src/integer';
-import { watch, unwatch, ec } from './watch';
+import { watch, unwatch, ec, calc } from './watch';
 import { eventcenter, collector } from './global';
 
 /** 
@@ -350,6 +350,10 @@ const Observer = {
 
     unwatch( observer, exp, handler ) {
         unwatch( observer, exp, handler );
+    },
+
+    calc( observer, exp ) {
+        return calc( observer, exp );
     },
 
     replace( observer, data ) {

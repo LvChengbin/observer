@@ -490,5 +490,14 @@ describe( 'Observer methods', () => {
             } );
         } );
     } );
+
+    it( 'Observer.calc', () => {
+        const observer = Observer.create( {
+            x : 1,
+            y : 2
+        } );
+
+        expect( Observer.calc( observer, 'x + y ' ) ).toEqual( 3 );
+    } );
 } );
 

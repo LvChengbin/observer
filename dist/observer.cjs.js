@@ -435,6 +435,10 @@ function unwatch( observer, exp, handler ) {
     callbacks.delete( list[ 0 ].callback );
 }
 
+function calc( observer, exp ) {
+    return expression( exp )( observer );
+}
+
 /** 
  * @file to convert an object to an observer instance.
  */
@@ -783,6 +787,10 @@ const Observer = {
 
     unwatch( observer, exp, handler ) {
         unwatch( observer, exp, handler );
+    },
+
+    calc( observer, exp ) {
+        return calc( observer, exp );
     },
 
     replace( observer, data ) {

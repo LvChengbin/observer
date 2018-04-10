@@ -678,6 +678,10 @@ function unwatch(observer, exp, handler) {
   callbacks.delete(list[0].callback);
 }
 
+function calc(observer, exp) {
+  return expression(exp)(observer);
+}
+
 /** 
  * @file to convert an object to an observer instance.
  */
@@ -1088,6 +1092,9 @@ var Observer = {
   },
   unwatch: function unwatch$$1(observer, exp, handler) {
     unwatch(observer, exp, handler);
+  },
+  calc: function calc$$1(observer, exp) {
+    return calc(observer, exp);
   },
   replace: function replace(observer, data) {
     var _arr = Object.keys(observer);
