@@ -706,6 +706,7 @@ var arrMethods = Object.create(proto);
  * Array.prototype.reverse
  */
 
+var arrayTraverseTranslate = true;
 ['push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse', 'fill'].forEach(function (method) {
   var original = proto[method];
   defineProperty(arrMethods, method, {
@@ -777,7 +778,7 @@ var arrMethods = Object.create(proto);
             var _item3 = _step2.value;
 
             if (_item3 && _typeof(_item3) === 'object') {
-              traverse(_item3);
+              arrayTraverseTranslate && traverse(_item3);
             }
           }
         } catch (err) {
@@ -804,12 +805,15 @@ var arrMethods = Object.create(proto);
     enumerable: false,
     writable: true,
     configurable: true,
-    value: function value(i, v) {
+    value: function value(i, v, traverseTranslate) {
       if (i >= this.length) {
         this.length = +i + 1;
       }
 
-      return this.splice(i, 1, v)[0];
+      arrayTraverseTranslate = traverseTranslate;
+      var res = this.splice(i, 1, v)[0];
+      arrayTraverseTranslate = true;
+      return res;
     }
   });
   defineProperty(arrMethods, '$get', {
@@ -1021,11 +1025,13 @@ var Observer = {
    * @param {*} value
    */
   set: function set(obj, key, value) {
+    var traverseTranslate = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+
     /**
      * if the object is an array and the key is a integer, set the value with [].$set
      */
     if (isArray(obj) && isInteger(key, true)) {
-      return obj.$set(key, value);
+      return obj.$set(key, value, traverseTranslate);
     }
 
     var old = obj[key];
@@ -1044,7 +1050,7 @@ var Observer = {
      * if the value is an object, to traverse the object with all paths in all observers
      */
 
-    if (isobj) {
+    if (isobj && traverseTranslate) {
       traverse(value);
     }
 

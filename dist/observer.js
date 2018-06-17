@@ -471,6 +471,8 @@ const arrMethods = Object.create( proto);
  * Array.prototype.reverse
  */
 
+let arrayTraverseTranslate = true;
+
 [ 'push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse', 'fill' ].forEach( method => {
 
     const original = proto[ method ];
@@ -513,7 +515,7 @@ const arrMethods = Object.create( proto);
             if( inserted ) {
                 for( let item of inserted ) {
                     if( item && typeof item === 'object' ) {
-                        traverse( item );
+                        arrayTraverseTranslate && traverse( item );
                     }
                 }
             }
@@ -526,11 +528,14 @@ const arrMethods = Object.create( proto);
         enumerable : false,
         writable : true,
         configurable : true,
-        value( i, v ) {
+        value( i, v, traverseTranslate ) {
             if( i >= this.length ) {
                 this.length = +i + 1;
             }
-            return this.splice( i, 1, v )[ 0 ];
+            arrayTraverseTranslate = traverseTranslate;
+            const res = this.splice( i, 1, v )[ 0 ];
+            arrayTraverseTranslate = true;
+            return res;
         }
     } );
 
@@ -719,13 +724,13 @@ const Observer = {
      * @param {String} key
      * @param {*} value
      */
-    set( obj, key, value ) {
+    set( obj, key, value, traverseTranslate = true ) {
 
         /**
          * if the object is an array and the key is a integer, set the value with [].$set
          */
         if( isArray( obj ) && isInteger( key, true ) ) {
-            return obj.$set( key, value );
+            return obj.$set( key, value, traverseTranslate );
         }
 
         const old = obj[ key ];
@@ -743,7 +748,7 @@ const Observer = {
         /**
          * if the value is an object, to traverse the object with all paths in all observers
          */
-        if( isobj ) {
+        if( isobj && traverseTranslate ) {
             traverse( value );
         }
         eventcenter.emit( 'set-value', obj, key, value, old );

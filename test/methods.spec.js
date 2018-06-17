@@ -25,22 +25,36 @@ describe( 'Observer methods', () => {
         expect( Observer.translated( obj, 'x' ) ).toBeFalsy();
     } );
 
-    it( 'Observer.set', () => {
-        const observer = Observer.create( {
-            key : 'value',
-            obj : {}
+    describe( 'Observer.set', () => {
+            const observer = Observer.create( {
+                key : 'value',
+                obj : {}
+            } );
+
+        it( 'to set a new property', () => {
+            Observer.set( observer, 'key', 'new value' );
+            expect( observer.key ).toEqual( 'new value' );
         } );
 
-        Observer.set( observer, 'key', 'new value' );
-        expect( observer.key ).toEqual( 'new value' );
+        it( 'the new value should have been translated', () => {
+            Observer.set( observer, 'key1', 'value1' );
+            expect( observer.key1 ).toEqual( 'value1' );
+            expect( Observer.translated( observer, 'key1' ) ).toBeTruthy();
 
-        Observer.set( observer, 'key1', 'value1' );
-        expect( observer.key1 ).toEqual( 'value1' );
-        expect( Observer.translated( observer, 'key1' ) ).toBeTruthy();
+            Observer.set( observer.obj, 'x', 1 );
+            expect( observer.obj.x ).toEqual( 1 );
+            expect( Observer.translated( observer.obj, 'x' ) ).toBeTruthy();
+            
+        } );
 
-        Observer.set( observer.obj, 'x', 1 );
-        expect( observer.obj.x ).toEqual( 1 );
-        expect( Observer.translated( observer.obj, 'x' ) ).toBeTruthy();
+        it( 'to set a new property with specifying traverseTranslate to false', () => {
+            Observer.set( observer, '$this', {
+                obj : { x : 1 }
+            } );
+            expect( observer.$this ).toEqual( { obj : { x : 1 } } );
+            expect( Observer.translated( observer.$this.obj ) ).toBeFalsy();
+        } );
+
     } );
 
     describe( 'Observer.watch', () => {
