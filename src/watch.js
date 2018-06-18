@@ -186,19 +186,18 @@ function setHandler( observer, exp, handler, setter, callback ) {
 
     const list = map.get( handler );
 
-    if( !list ) {
-        map.set( handler, [ { setter, callback } ] );
-    }
-
     let exists = false;
 
+    if( !list ) {
+        map.set( handler, [ { setter, callback } ] );
+        return;
+    }
     for( let item of list ) {
         if( item.setter === setter && item.callback === callback ) {
             exists = true;
             break;
         }
     }
-
     if( !exists ) {
         list.push( { setter, callback } );
     }
@@ -278,7 +277,7 @@ function watch( observer, exp, handler ) {
     callbacks.add( cb );
     /**
      * while start to watch a non-exists path in an observer,
-     * no setters would be collected by collector, and it would make an lonely callback function in callbacks map
+     * no setters would be collected by collector, and it would make an alone callback function in callbacks map
      * which cannot be found by handler, so, it cannot be removed while calling Observer.unwatch.
      * To add a handler with its setter is null can resolve this issue.
      */

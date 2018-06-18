@@ -451,15 +451,16 @@ function setHandler(observer, exp, handler, setter, callback) {
   }
 
   var list = map.get(handler);
+  var exists = false;
 
   if (!list) {
     map.set(handler, [{
       setter: setter,
       callback: callback
     }]);
+    return;
   }
 
-  var exists = false;
   var _iteratorNormalCompletion3 = true;
   var _didIteratorError3 = false;
   var _iteratorError3 = undefined;
@@ -615,7 +616,7 @@ function watch(observer, exp, handler) {
   callbacks.add(_cb2);
   /**
    * while start to watch a non-exists path in an observer,
-   * no setters would be collected by collector, and it would make an lonely callback function in callbacks map
+   * no setters would be collected by collector, and it would make an alone callback function in callbacks map
    * which cannot be found by handler, so, it cannot be removed while calling Observer.unwatch.
    * To add a handler with its setter is null can resolve this issue.
    */
