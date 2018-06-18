@@ -505,13 +505,20 @@ describe( 'Observer methods', () => {
         } );
     } );
 
-    it( 'Observer.calc', () => {
-        const observer = Observer.create( {
-            x : 1,
-            y : 2
+    describe( 'Observer.calc', () => {
+        
+        it( 'simple expression', () => {
+            const observer = Observer.create( {
+                x : 1,
+                y : 2
+            } );
+            expect( Observer.calc( observer, 'x + y ' ) ).toEqual( 3 );
         } );
 
-        expect( Observer.calc( observer, 'x + y ' ) ).toEqual( 3 );
+        it( 'expression with default value', () => {
+            const observer = Observer.create( {} );
+            expect( Observer.calc( observer, 'x + y', 100 ) ).toEqual( 100 );
+        } );
     } );
 } );
 

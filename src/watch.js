@@ -1,6 +1,7 @@
 import EventEmitter from '@lvchengbin/event-emitter';
 import isFunction from '@lvchengbin/is/src/function';
 import isPromise from '@lvchengbin/is/src/promise';
+import isUndefined from '@lvchengbin/is/src/undefined';
 import { eventcenter, collector, isSubset } from './global';
 
 const ec = new EventEmitter();
@@ -305,8 +306,12 @@ function unwatch( observer, exp, handler ) {
     callbacks.delete( list[ 0 ].callback );
 }
 
-function calc( observer, exp ) {
-    return expression( exp )( observer );
+function calc( observer, exp, defaultValue ) {
+    const val = expression( exp )( observer );
+    if( !isUndefined( defaultValue ) && ( val === null || isUndefined( val ) ) ) {
+        return defaultValue;
+    }
+    return val;
 }
 
 export { watch, unwatch, ec, calc };

@@ -87,11 +87,11 @@ let arrayTraverseTranslate = true;
         enumerable : false,
         writable : true,
         configurable : true,
-        value( i, v, traverseTranslate ) {
+        value( i, v, trans ) {
             if( i >= this.length ) {
                 this.length = +i + 1;
             }
-            arrayTraverseTranslate = traverseTranslate;
+            arrayTraverseTranslate = trans;
             const res = this.splice( i, 1, v )[ 0 ];
             arrayTraverseTranslate = true;
             return res;
@@ -140,9 +140,7 @@ function translate( obj, key, val ) {
      * if the configurable of the property is false,
      * the property cannot be translated
      */
-    if( descriptor && !descriptor.configurable ) {
-        return;
-    }
+    if( descriptor && !descriptor.configurable ) return;
 
     const setter = descriptor && descriptor.set;
 
@@ -268,9 +266,7 @@ const Observer = {
         }
 
         traverse( obj );
-        if( proto ) {
-            setPrototypeOf( obj, proto );
-        }
+        proto && setPrototypeOf( obj, proto );
         eventcenter.emit( 'add-observer', obj );         
         return obj;
     },
@@ -283,13 +279,13 @@ const Observer = {
      * @param {String} key
      * @param {*} value
      */
-    set( obj, key, value, traverseTranslate = true ) {
+    set( obj, key, value, trans = true ) {
 
         /**
          * if the object is an array and the key is a integer, set the value with [].$set
          */
         if( isArray( obj ) && isInteger( key, true ) ) {
-            return obj.$set( key, value, traverseTranslate );
+            return obj.$set( key, value, trans );
         }
 
         const old = obj[ key ];
@@ -307,9 +303,7 @@ const Observer = {
         /**
          * if the value is an object, to traverse the object with all paths in all observers
          */
-        if( isobj && traverseTranslate ) {
-            traverse( value );
-        }
+        isobj && trans && traverse( value );
         eventcenter.emit( 'set-value', obj, key, value, old );
     },
 
@@ -357,8 +351,8 @@ const Observer = {
         unwatch( observer, exp, handler );
     },
 
-    calc( observer, exp ) {
-        return calc( observer, exp );
+    calc( observer, exp, defaultValue ) {
+        return calc( observer, exp, defaultValue );
     },
 
     replace( observer, data ) {

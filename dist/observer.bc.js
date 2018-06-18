@@ -182,6 +182,10 @@ var isPromise = (function (p) {
   return p && isFunction(p.then);
 });
 
+function isUndefined () {
+  return arguments.length > 0 && typeof arguments[0] === 'undefined';
+}
+
 var eventcenter = new EventEmitter();
 var collector = {
   records: [],
@@ -678,8 +682,14 @@ function unwatch(observer, exp, handler) {
   callbacks.delete(list[0].callback);
 }
 
-function calc(observer, exp) {
-  return expression(exp)(observer);
+function calc(observer, exp, defaultValue) {
+  var val = expression(exp)(observer);
+
+  if (!isUndefined(defaultValue) && (val === null || isUndefined(val))) {
+    return defaultValue;
+  }
+
+  return val;
 }
 
 /** 
@@ -805,12 +815,12 @@ var arrayTraverseTranslate = true;
     enumerable: false,
     writable: true,
     configurable: true,
-    value: function value(i, v, traverseTranslate) {
+    value: function value(i, v, trans) {
       if (i >= this.length) {
         this.length = +i + 1;
       }
 
-      arrayTraverseTranslate = traverseTranslate;
+      arrayTraverseTranslate = trans;
       var res = this.splice(i, 1, v)[0];
       arrayTraverseTranslate = true;
       return res;
@@ -859,10 +869,7 @@ function translate(obj, key, val) {
    * the property cannot be translated
    */
 
-  if (descriptor && !descriptor.configurable) {
-    return;
-  }
-
+  if (descriptor && !descriptor.configurable) return;
   var setter = descriptor && descriptor.set;
   /**
    * The property has already transformed by Observer.
@@ -1007,11 +1014,7 @@ var Observer = {
     }
 
     traverse(obj);
-
-    if (proto) {
-      setPrototypeOf(obj, proto);
-    }
-
+    proto && setPrototypeOf(obj, proto);
     eventcenter.emit('add-observer', obj);
     return obj;
   },
@@ -1025,13 +1028,13 @@ var Observer = {
    * @param {*} value
    */
   set: function set(obj, key, value) {
-    var traverseTranslate = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+    var trans = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
 
     /**
      * if the object is an array and the key is a integer, set the value with [].$set
      */
     if (isArray(obj) && isInteger(key, true)) {
-      return obj.$set(key, value, traverseTranslate);
+      return obj.$set(key, value, trans);
     }
 
     var old = obj[key];
@@ -1050,10 +1053,7 @@ var Observer = {
      * if the value is an object, to traverse the object with all paths in all observers
      */
 
-    if (isobj && traverseTranslate) {
-      traverse(value);
-    }
-
+    isobj && trans && traverse(value);
     eventcenter.emit('set-value', obj, key, value, old);
   },
 
@@ -1099,8 +1099,8 @@ var Observer = {
   unwatch: function unwatch$$1(observer, exp, handler) {
     unwatch(observer, exp, handler);
   },
-  calc: function calc$$1(observer, exp) {
-    return calc(observer, exp);
+  calc: function calc$$1(observer, exp, defaultValue) {
+    return calc(observer, exp, defaultValue);
   },
   replace: function replace(observer, data) {
     var _arr = Object.keys(observer);

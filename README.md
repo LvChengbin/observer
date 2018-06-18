@@ -175,7 +175,7 @@ Observer.destroy( observer );
 To set a new property to an object in an observer. If the `object` is an `Array` and the `key` is an `Integer`, the value would be set as the item of the array.
 
 ```js
-Observer.set( obj, key, value );
+Observer.set( obj, key, value, trans = true );
 ```
  - **obj**
     The object which would be change
@@ -185,6 +185,9 @@ Observer.set( obj, key, value );
 
  - **value**
     The property's value
+
+ - **trans**
+    Denoting if translate the value.
 
 ```js
 const obj = {};
@@ -272,6 +275,13 @@ const handler = value => {
 
 Observer.watch( observer, computed, handler );
 Observer.unwatch( observer, computed, handler );
+```
+
+#### Observer.calc
+To execute an expression.
+
+```js
+Observer.calc( expression, defaultValue );
 ```
 
 #### Observer.is
