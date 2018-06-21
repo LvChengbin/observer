@@ -1,7 +1,28 @@
+import sleep from '@lvchengbin/sleep';
 import Promise from '@lvchengbin/promise';
 import Observer from '../src/index';
 
 describe( 'Observer methods', () => {
+
+    afterAll( () => {
+        const observer = Observer.create( {
+            obj : {
+                obj : {
+                    obj : {
+                        x : 1, 
+                        y : 2,
+                        z : 3
+                    }
+                }
+            }
+        } );
+
+        for( let i = 0; i < 100000; i += 1 ) {
+            Observer.watch( observer, 'obj.obj.obj.x + obj.obj.obj.y + obj.obj.obj.z', () => {} );
+        }
+        Observer.delete( observer, 'obj' );
+        console.log( `Used Memory: ${window.performance.memory.usedJSHeapSize / 1024 / 1024}M.` );
+    } );
 
     it( 'Observer.translated', () => {
         const observer = Observer.create( {
@@ -247,7 +268,7 @@ describe( 'Observer methods', () => {
             observer.x = 'y';
         } );
 
-        it( 'should not work if an object was delete fron an Observer', () => {
+        it( 'should not work if an object was delete from an Observer', () => {
             const obj = { x : 1 };
             const observer = Observer.create( { obj } );
 
@@ -304,9 +325,7 @@ describe( 'Observer methods', () => {
             const computed =  ob => {
                 return new Promise( resolve => {
                     const y = ob.y;
-                    setTimeout( () => {
-                        resolve( y );
-                    }, 10 );
+                    sleep( 10 ).then( () => resolve( y ) );
                 } );
             };
 
@@ -346,6 +365,20 @@ describe( 'Observer methods', () => {
 
         } );
 
+        it( 'watching same expression multiple times', done => {
+            const observer = Observer.create( { x : 1, y : 2 } );
+            Observer.watch( observer, 'x', ( value, oldvalue ) => {
+                expect( value ).toEqual( 2 );
+                expect( oldvalue ).toEqual( 1 );
+            } );
+
+            Observer.watch( observer, 'x', ( value, oldvalue ) => {
+                expect( value ).toEqual( 2 );
+                expect( oldvalue ).toEqual( 1 );
+                done();
+            } );
+            observer.x = 2;
+        } );
     } );
 
     describe( 'Watching with inherited data', () => {
