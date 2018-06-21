@@ -39,6 +39,7 @@ eventcenter.on( 'add-observer', observer => {
  */
 eventcenter.on( 'destroy-observer',  observer => {
     soe.deleteObserver( observer );
+    values.set( observer, new Map() );
 } );
 
 /**
@@ -89,7 +90,7 @@ function expression( exp ) {
     if( isFunction( exp ) ) return exp;
     let fn = caches.get( exp );
     if( fn ) return fn;
-    fn = new Function( 's', 'try{with(s)return ' + exp + '}catch(e){return null}' );
+    fn = new Function( 's', `try{with(s)return ${exp}}catch(e){return null}` );
     caches.set( exp, fn );
     return fn;
 }
@@ -103,14 +104,7 @@ function expression( exp ) {
  * @param {*} value
  */
 function setValue( observer, exp, value ) {
-    let oldvalue;
-    let map = values.get( observer );
-    oldvalue = map.get( exp );
-
-    if( value !== oldvalue ) {
-        map.set( exp, value );
-    }
-    return oldvalue;
+    values.get( observer ).set( exp, value );
 }
 
 function getValue( observer, exp ) {
@@ -139,7 +133,7 @@ function execute( observer, exp, handlers ) {
         const ov = getValue( observer, exp );
         if( ov !== val ) {
             handlers.forEach( handler => handler( val, ov, observer, exp ) );
-        setValue( observer, exp, val );
+            setValue( observer, exp, val );
         }
     }
 }
