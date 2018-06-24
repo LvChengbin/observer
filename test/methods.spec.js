@@ -76,6 +76,14 @@ describe( 'Observer methods', () => {
             expect( Observer.translated( observer.$this.obj ) ).toBeFalsy();
         } );
 
+        it( 'to set a new property with mute is true', () => {
+            let i = 0;
+            const observer = Observer.create( {} );
+            Observer.watch( observer, 'x', () => i++ );
+            Observer.set( observer, 'x', 1, true, true );
+            expect( i ).toEqual( 0 );
+        } );
+
     } );
 
     describe( 'Observer.watch', () => {

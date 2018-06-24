@@ -266,15 +266,16 @@ eventcenter.on( 'add-observer', function (observer) {
  */
 eventcenter.on( 'destroy-observer',  function (observer) {
     soe$1.deleteObserver( observer );
+    values.set( observer, new Map() );
 } );
 
 /**
  * while setting new data into an object in an observer, or deleting properties of objects in observers,
  * all callback function should be executed again to check if the changes would effect any expressions.
  */
-eventcenter.on( 'set-value', function () {
+eventcenter.on( 'set-value', function ( obj, key, value, old, mute ) {
     // to execute all expressions after deleting a property from an observer.
-    soe$1.forEachAllObserver( execute );
+    mute || soe$1.forEachAllObserver( execute );
 } );
 
 /**
@@ -318,7 +319,7 @@ function expression( exp ) {
     if( isFunction( exp ) ) { return exp; }
     var fn = caches.get( exp );
     if( fn ) { return fn; }
-    fn = new Function( 's', 'try{with(s)return ' + exp + '}catch(e){return null}' );
+    fn = new Function( 's', ("try{with(s)return " + exp + "}catch(e){return null}") );
     caches.set( exp, fn );
     return fn;
 }
@@ -332,14 +333,7 @@ function expression( exp ) {
  * @param {*} value
  */
 function setValue( observer, exp, value ) {
-    var oldvalue;
-    var map = values.get( observer );
-    oldvalue = map.get( exp );
-
-    if( value !== oldvalue ) {
-        map.set( exp, value );
-    }
-    return oldvalue;
+    values.get( observer ).set( exp, value );
 }
 
 function getValue( observer, exp ) {
@@ -372,7 +366,7 @@ function execute( observer, exp, handlers ) {
         var ov = getValue( observer, exp );
         if( ov !== val ) {
             handlers.forEach( function (handler) { return handler( val, ov, observer, exp ); } );
-        setValue( observer, exp, val );
+            setValue( observer, exp, val );
         }
     }
 }
@@ -713,8 +707,9 @@ var Observer = {
      * @param {String} key
      * @param {*} value
      */
-    set: function set( obj, key, value, trans ) {
+    set: function set( obj, key, value, trans, mute ) {
         if ( trans === void 0 ) trans = true;
+        if ( mute === void 0 ) mute = false;
 
 
         /**
@@ -740,7 +735,7 @@ var Observer = {
          * if the value is an object, to traverse the object with all paths in all observers
          */
         isobj && trans && traverse( value );
-        eventcenter.emit( 'set-value', obj, key, value, old );
+        eventcenter.emit( 'set-value', obj, key, value, old, mute );
     },
 
     /**

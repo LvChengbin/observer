@@ -251,15 +251,16 @@ eventcenter.on( 'add-observer', observer => {
  */
 eventcenter.on( 'destroy-observer',  observer => {
     soe$1.deleteObserver( observer );
+    values.set( observer, new Map() );
 } );
 
 /**
  * while setting new data into an object in an observer, or deleting properties of objects in observers,
  * all callback function should be executed again to check if the changes would effect any expressions.
  */
-eventcenter.on( 'set-value', () => {
+eventcenter.on( 'set-value', ( obj, key, value, old, mute ) => {
     // to execute all expressions after deleting a property from an observer.
-    soe$1.forEachAllObserver( execute );
+    mute || soe$1.forEachAllObserver( execute );
 } );
 
 /**
@@ -301,7 +302,7 @@ function expression( exp ) {
     if( isFunction( exp ) ) return exp;
     let fn = caches.get( exp );
     if( fn ) return fn;
-    fn = new Function( 's', 'try{with(s)return ' + exp + '}catch(e){return null}' );
+    fn = new Function( 's', `try{with(s)return ${exp}}catch(e){return null}` );
     caches.set( exp, fn );
     return fn;
 }
@@ -315,14 +316,7 @@ function expression( exp ) {
  * @param {*} value
  */
 function setValue( observer, exp, value ) {
-    let oldvalue;
-    let map = values.get( observer );
-    oldvalue = map.get( exp );
-
-    if( value !== oldvalue ) {
-        map.set( exp, value );
-    }
-    return oldvalue;
+    values.get( observer ).set( exp, value );
 }
 
 function getValue( observer, exp ) {
@@ -351,7 +345,7 @@ function execute( observer, exp, handlers ) {
         const ov = getValue( observer, exp );
         if( ov !== val ) {
             handlers.forEach( handler => handler( val, ov, observer, exp ) );
-        setValue( observer, exp, val );
+            setValue( observer, exp, val );
         }
     }
 }
@@ -681,7 +675,7 @@ const Observer = {
      * @param {String} key
      * @param {*} value
      */
-    set( obj, key, value, trans = true ) {
+    set( obj, key, value, trans = true, mute = false ) {
 
         /**
          * if the object is an array and the key is a integer, set the value with [].$set
@@ -706,7 +700,7 @@ const Observer = {
          * if the value is an object, to traverse the object with all paths in all observers
          */
         isobj && trans && traverse( value );
-        eventcenter.emit( 'set-value', obj, key, value, old );
+        eventcenter.emit( 'set-value', obj, key, value, old, mute );
     },
 
     /**

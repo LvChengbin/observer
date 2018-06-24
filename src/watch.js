@@ -46,9 +46,9 @@ eventcenter.on( 'destroy-observer',  observer => {
  * while setting new data into an object in an observer, or deleting properties of objects in observers,
  * all callback function should be executed again to check if the changes would effect any expressions.
  */
-eventcenter.on( 'set-value', () => {
+eventcenter.on( 'set-value', ( obj, key, value, old, mute ) => {
     // to execute all expressions after deleting a property from an observer.
-    soe.forEachAllObserver( execute );
+    mute || soe.forEachAllObserver( execute );
 } );
 
 /**

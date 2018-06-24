@@ -279,7 +279,7 @@ const Observer = {
      * @param {String} key
      * @param {*} value
      */
-    set( obj, key, value, trans = true ) {
+    set( obj, key, value, trans = true, mute = false ) {
 
         /**
          * if the object is an array and the key is a integer, set the value with [].$set
@@ -304,7 +304,7 @@ const Observer = {
          * if the value is an object, to traverse the object with all paths in all observers
          */
         isobj && trans && traverse( value );
-        eventcenter.emit( 'set-value', obj, key, value, old );
+        eventcenter.emit( 'set-value', obj, key, value, old, mute );
     },
 
     /**
