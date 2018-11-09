@@ -1,5 +1,7 @@
 # Observer
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/LvChengbin/observer.svg)](https://greenkeeper.io/)
+
 A library for watching the changes of objects, and the changes of return values of expressions or functions.
 
 
